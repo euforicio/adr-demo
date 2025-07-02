@@ -1,0 +1,112 @@
+name: Generate ADR Index
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'docs/adr/**/*.md'
+      - '!docs/adr-index.json'  # Don't trigger on index changes to avoid loops
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/adr/**/*.md'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  generate-index:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Generate ADR Index JSON
+      run: |
+        #!/bin/bash
+        
+        # Create the ADR index JSON file
+        cat > docs/adr-index.json << 'EOF'
+        {
+          "generated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "adrs": [
+        EOF
+        
+        # Find all ADR files and process them
+        find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | sort | while IFS= read -r file; do
+          # Extract number and filename
+          filename=$(basename "$file")
+          number=$(echo "$filename" | sed 's/^\([0-9]\{4\}\)-.*/\1/')
+          
+          # Extract title from first h1 in file
+          title=$(grep -m 1 "^# " "$file" | sed 's/^# //' | sed 's/"/\\"/g' || echo "Unknown Title")
+          
+          # Extract status from file
+          status=$(awk '/^## Status/ {getline; while(getline && $0 !~ /^##/ && $0 !~ /^$/) {gsub(/^[ \t]+|[ \t]+$/, "", $0); if($0) {print $0; exit}}}' "$file" || echo "Unknown")
+          
+          # Detect diagram type by looking for C4 diagrams
+          diagram_type="-"
+          if grep -q "C4Context" "$file"; then
+            diagram_type="Context"
+          elif grep -q "C4Container" "$file"; then
+            diagram_type="Container"
+          elif grep -q "C4Component" "$file"; then
+            diagram_type="Component"
+          elif grep -q -E "(sequenceDiagram|flowchart)" "$file"; then
+            diagram_type="Dynamic"
+          fi
+          
+          # Generate relative path for web app
+          relative_path="adr/$filename"
+          
+          # Add comma if not first entry
+          if [ "$number" != "0001" ]; then
+            echo "," >> docs/adr-index.json
+          fi
+          
+          # Add ADR entry to JSON
+          cat >> docs/adr-index.json << EOF
+            {
+              "number": "$number",
+              "title": "$title",
+              "status": "$status",
+              "diagramType": "$diagram_type",
+              "filePath": "$relative_path",
+              "fileName": "$filename"
+            }
+        EOF
+        done
+        
+        # Close JSON array and object
+        cat >> docs/adr-index.json << 'EOF'
+          ]
+        }
+        EOF
+        
+        # Pretty print the JSON
+        if command -v python3 &> /dev/null; then
+          python3 -m json.tool docs/adr-index.json > docs/adr-index.tmp && mv docs/adr-index.tmp docs/adr-index.json
+        fi
+        
+        echo "Generated ADR index with $(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l) entries"
+        
+    - name: Show generated index
+      run: cat docs/adr-index.json
+      
+    - name: Commit changes
+      if: github.event_name != 'pull_request'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if git diff --quiet docs/adr-index.json; then
+          echo "No changes to ADR index"
+        else
+          git add docs/adr-index.json
+          git commit -m "🤖 Auto-update ADR index - Generated automatically by GitHub Actions"
+          git push
+          
+          echo "✅ ADR index updated and committed"
+          echo "🚀 This will trigger GitHub Pages deployment automatically"
+        fi

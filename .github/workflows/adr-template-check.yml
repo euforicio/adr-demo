@@ -1,0 +1,222 @@
+name: ADR Template and PR Check
+
+on:
+  pull_request:
+    paths:
+      - 'docs/adr/**'
+    types: [opened, synchronize, reopened]
+
+jobs:
+  adr-pr-check:
+    runs-on: ubuntu-latest
+    name: ADR Pull Request Validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Get changed ADR files
+      id: changed-files
+      run: |
+        # Get list of changed ADR files in this PR
+        changed_files=$(git diff --name-only origin/${{ github.base_ref }}..HEAD -- 'docs/adr/*.md' | grep -E '[0-9][0-9][0-9][0-9]-.*\.md$' || echo "")
+        
+        if [ -z "$changed_files" ]; then
+          echo "No ADR files changed in this PR"
+          echo "adr_files=" >> $GITHUB_OUTPUT
+        else
+          echo "Changed ADR files:"
+          echo "$changed_files"
+          # Convert to space-separated string for output
+          adr_files_str=$(echo "$changed_files" | tr '\n' ' ')
+          echo "adr_files=$adr_files_str" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Validate new ADR template compliance
+      if: steps.changed-files.outputs.adr_files != ''
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Validating ADR template compliance..."
+        
+        adr_files="${{ steps.changed-files.outputs.adr_files }}"
+        validation_failed=false
+        
+        for file in $adr_files; do
+          if [ ! -f "$file" ]; then
+            echo "⚠️  File $file was deleted or moved, skipping validation"
+            continue
+          fi
+          
+          echo "Checking $file..."
+          
+          # Check if it's a new file (added in this PR)
+          if git diff --name-status origin/${{ github.base_ref }}..HEAD | grep -q "^A.*$file"; then
+            echo "📝 New ADR detected: $file"
+            
+            # Validate template structure more thoroughly for new ADRs
+            template_sections=("Status" "Context" "Decision" "Consequences")
+            
+            for section in "${template_sections[@]}"; do
+              if ! grep -q "^## $section" "$file"; then
+                echo "❌ ERROR: New ADR $file is missing required '## $section' section"
+                validation_failed=true
+              else
+                # Check if section has content (not just the header)
+                section_content=$(sed -n "/^## $section/,/^## /p" "$file" | tail -n +2 | head -n -1 | tr -d '[:space:]')
+                if [ -z "$section_content" ] || [ "$section_content" = "" ]; then
+                  echo "❌ ERROR: Section '## $section' in $file appears to be empty"
+                  echo "💡 Please add meaningful content to this section"
+                  validation_failed=true
+                fi
+              fi
+            done
+            
+            # Check for template placeholder text
+            if grep -q "\[Short noun phrase\]" "$file"; then
+              echo "❌ ERROR: $file still contains template placeholder text"
+              validation_failed=true
+            fi
+            
+            if grep -q "\[Proposed | Accepted | Deprecated | Superseded\]" "$file"; then
+              echo "❌ ERROR: $file still contains status template placeholder"
+              validation_failed=true
+            fi
+            
+            # Check that title is not the template title
+            title=$(head -1 "$file" | sed 's/^# //')
+            if [ "$title" = "[Short noun phrase]" ]; then
+              echo "❌ ERROR: $file still has template title"
+              validation_failed=true
+            fi
+            
+            # Validate ADR number format
+            if ! echo "$file" | grep -qE 'docs/adr/[0-9][0-9][0-9][0-9]-[a-z0-9-]+\.md$'; then
+              echo "❌ ERROR: $file does not follow naming convention (0000-kebab-case-title.md)"
+              validation_failed=true
+            fi
+          else
+            echo "📝 Modified existing ADR: $file"
+          fi
+        done
+        
+        if [ "$validation_failed" = true ]; then
+          echo ""
+          echo "❌ ADR template validation failed!"
+          echo ""
+          echo "📋 New ADR Checklist:"
+          echo "  ✅ Use docs/adr/template.md as starting point"
+          echo "  ✅ Follow naming: 0000-kebab-case-title.md"
+          echo "  ✅ Include all required sections: Status, Context, Decision, Consequences"  
+          echo "  ✅ Replace all template placeholder text"
+          echo "  ✅ Add meaningful content to each section"
+          echo "  ✅ Set appropriate status (usually 'Proposed' for new ADRs)"
+          echo ""
+          exit 1
+        fi
+        
+        echo "✅ ADR template validation passed"
+    
+    - name: Check ADR numbering conflicts
+      if: steps.changed-files.outputs.adr_files != ''
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Checking for ADR numbering conflicts..."
+        
+        adr_files="${{ steps.changed-files.outputs.adr_files }}"
+        validation_failed=false
+        
+        for file in $adr_files; do
+          if [ ! -f "$file" ]; then
+            continue
+          fi
+          
+          # Extract ADR number
+          number=$(echo "$file" | sed 's/.*\/\([0-9][0-9][0-9][0-9]\)-.*/\1/')
+          
+          # Check if this number exists in main branch
+          existing_file=$(git ls-tree origin/${{ github.base_ref }} -- "docs/adr/$number-*.md" | head -1 | awk '{print $4}' || echo "")
+          
+          if [ -n "$existing_file" ] && [ "$existing_file" != "$file" ]; then
+            echo "❌ ERROR: ADR number $number conflicts with existing file: $existing_file"
+            echo "💡 Please use the next available ADR number"
+            validation_failed=true
+          fi
+        done
+        
+        if [ "$validation_failed" = true ]; then
+          echo ""
+          echo "❌ ADR numbering conflict detected!"
+          echo ""
+          echo "🔢 To find the next available number:"
+          echo "  git ls-remote origin ${{ github.base_ref }} | head -1 | cut -f1 | xargs git ls-tree --name-only | grep 'docs/adr/[0-9]' | sort | tail -1"
+          echo ""
+          exit 1
+        fi
+        
+        echo "✅ No ADR numbering conflicts found"
+    
+    - name: Generate PR feedback
+      if: steps.changed-files.outputs.adr_files != ''
+      run: |
+        echo "🎉 ADR Pull Request Validation Summary"
+        echo ""
+        echo "Changed ADR files in this PR:"
+        adr_files="${{ steps.changed-files.outputs.adr_files }}"
+        for file in $adr_files; do
+          if [ -f "$file" ]; then
+            number=$(echo "$file" | sed 's/.*\/\([0-9][0-9][0-9][0-9]\)-.*/\1/')
+            title=$(head -1 "$file" | sed 's/^# //')
+            status_line=$(grep -A 2 "^## Status" "$file" | tail -1 | xargs)
+            echo "  📄 ADR-$number: $title (Status: $status_line)"
+          fi
+        done
+        echo ""
+        echo "✅ All validations passed!"
+        echo ""
+        echo "📋 Next steps:"
+        echo "  1. Request review from Architecture Review Board members"
+        echo "  2. Address any feedback in PR comments"
+        echo "  3. Once approved, the ADR will be merged and index auto-updated"
+    
+    - name: Add PR comment with validation results
+      if: steps.changed-files.outputs.adr_files != '' && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const adrFiles = '${{ steps.changed-files.outputs.adr_files }}'.split(' ').filter(f => f.length > 0);
+          
+          if (adrFiles.length === 0) return;
+          
+          let comment = '## 🏗️ ADR Validation Results\n\n';
+          comment += '✅ **All ADR validations passed!**\n\n';
+          comment += '### Changed ADRs in this PR:\n\n';
+          
+          for (const file of adrFiles) {
+            const number = file.match(/(\d{4})-/)[1];
+            comment += `- 📄 **ADR-${number}**: \`${file}\`\n`;
+          }
+          
+          comment += '\n### ✅ Validations Completed:\n';
+          comment += '- Template structure compliance\n';
+          comment += '- Required sections present\n';
+          comment += '- No template placeholder text\n';
+          comment += '- ADR numbering conflicts checked\n';
+          comment += '- Naming convention compliance\n\n';
+          comment += '### 📋 Next Steps:\n';
+          comment += '1. Architecture Review Board will review this ADR\n';
+          comment += '2. Address any feedback in PR comments\n';
+          comment += '3. Once approved and merged, README index will be auto-updated\n\n';
+          comment += '*This comment was automatically generated by the ADR validation workflow.*';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

@@ -1,0 +1,8 @@
+# Architecture Decision Records require Architecture Review Board approval
+docs/adr/ @euforicio
+
+# ADR template changes require special attention
+docs/adr/template.md @euforicio
+
+# GitHub Actions workflows for ADR process
+.github/workflows/adr-*.yml @euforicio

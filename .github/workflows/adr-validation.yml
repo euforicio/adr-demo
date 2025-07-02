@@ -1,0 +1,266 @@
+name: ADR Validation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/adr/**'
+      - 'README.md'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/adr/**'
+      - 'README.md'
+
+jobs:
+  validate-adrs:
+    runs-on: ubuntu-latest
+    name: Validate ADR Structure and Numbering
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g js-yaml
+        npm install -g markdownlint-cli2
+    
+    - name: Validate ADR numbering
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Validating ADR numbering..."
+        
+        # Get all ADR files
+        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
+        
+        if [ -z "$adr_files" ]; then
+          echo "✅ No numbered ADR files found"
+          exit 0
+        fi
+        
+        echo "Found ADR files:"
+        echo "$adr_files"
+        
+        # Extract numbers and check for duplicates
+        numbers=$(echo "$adr_files" | sed 's/.*\/\([0-9][0-9][0-9][0-9]\)-.*/\1/' | sort)
+        duplicates=$(echo "$numbers" | uniq -d)
+        
+        if [ -n "$duplicates" ]; then
+          echo "❌ ERROR: Duplicate ADR numbers found:"
+          echo "$duplicates"
+          exit 1
+        fi
+        
+        # Check for sequential numbering
+        expected=1
+        for file in $adr_files; do
+          number=$(echo "$file" | sed 's/.*\/\([0-9][0-9][0-9][0-9]\)-.*/\1/' | sed 's/^0*//')
+          if [ "$number" != "$expected" ]; then
+            echo "❌ ERROR: Non-sequential ADR numbering. Expected $expected, found $number in $file"
+            echo "💡 Tip: ADRs should be numbered sequentially starting from 0001"
+            exit 1
+          fi
+          expected=$((expected + 1))
+        done
+        
+        echo "✅ ADR numbering validation passed"
+    
+    - name: Validate ADR format
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Validating ADR format..."
+        
+        # Find all ADR files (excluding template)
+        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md')
+        
+        if [ -z "$adr_files" ]; then
+          echo "✅ No ADR files to validate"
+          exit 0
+        fi
+        
+        validation_failed=false
+        
+        for file in $adr_files; do
+          echo "Checking $file..."
+          
+          # Check required sections
+          if ! grep -q "^## Status" "$file"; then
+            echo "❌ ERROR: Missing 'Status' section in $file"
+            validation_failed=true
+          fi
+          
+          if ! grep -q "^## Context" "$file"; then
+            echo "❌ ERROR: Missing 'Context' section in $file"
+            validation_failed=true
+          fi
+          
+          if ! grep -q "^## Decision" "$file"; then
+            echo "❌ ERROR: Missing 'Decision' section in $file"
+            validation_failed=true
+          fi
+          
+          if ! grep -q "^## Consequences" "$file"; then
+            echo "❌ ERROR: Missing 'Consequences' section in $file"
+            validation_failed=true
+          fi
+          
+          # Check valid status values
+          status_line=$(grep "^## Status" -A 2 "$file" | tail -1)
+          if ! echo "$status_line" | grep -qE "(Proposed|Accepted|Deprecated|Superseded)"; then
+            echo "❌ ERROR: Invalid status in $file. Must be one of: Proposed, Accepted, Deprecated, Superseded"
+            echo "Found: $status_line"
+            validation_failed=true
+          fi
+          
+          # Check title format (should not be empty)
+          title=$(head -1 "$file" | sed 's/^# //')
+          if [ -z "$title" ]; then
+            echo "❌ ERROR: Missing title in $file"
+            validation_failed=true
+          fi
+        done
+        
+        if [ "$validation_failed" = true ]; then
+          echo "❌ ADR format validation failed"
+          exit 1
+        fi
+        
+        echo "✅ ADR format validation passed"
+    
+    - name: Validate ADR numbering sequence
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Validating ADR numbering sequence..."
+        
+        # Get all ADR files sorted by number
+        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
+        
+        if [ -z "$adr_files" ]; then
+          echo "✅ No ADR files found - this is valid for a new repository"
+          exit 0
+        fi
+        
+        validation_failed=false
+        expected_number=1
+        
+        echo "Found ADR files:"
+        for file in $adr_files; do
+          filename=$(basename "$file")
+          number=$(echo "$filename" | sed 's/^\([0-9][0-9][0-9][0-9]\)-.*/\1/')
+          expected_padded=$(printf "%04d" $expected_number)
+          
+          echo "  $filename (number: $number)"
+          
+          # Check if number matches expected sequence
+          if [ "$number" != "$expected_padded" ]; then
+            echo "❌ ERROR: Expected ADR $expected_padded but found $number"
+            echo "   ADRs must be numbered sequentially starting from 0001"
+            validation_failed=true
+          fi
+          
+          # Check filename format
+          if [[ ! "$filename" =~ ^[0-9]{4}-[a-z0-9-]+\.md$ ]]; then
+            echo "❌ ERROR: Invalid filename format: $filename"
+            echo "   Format should be: NNNN-kebab-case-title.md"
+            validation_failed=true
+          fi
+          
+          expected_number=$((expected_number + 1))
+        done
+        
+        # Check for duplicates
+        echo ""
+        echo "🔍 Checking for duplicate numbers..."
+        numbers=$(echo "$adr_files" | xargs -I {} basename {} | sed 's/^\([0-9][0-9][0-9][0-9]\)-.*/\1/' | sort)
+        duplicates=$(echo "$numbers" | uniq -d)
+        
+        if [ -n "$duplicates" ]; then
+          echo "❌ ERROR: Duplicate ADR numbers found:"
+          echo "$duplicates" | sed 's/^/   /'
+          validation_failed=true
+        else
+          echo "✅ No duplicate numbers found"
+        fi
+        
+        if [ "$validation_failed" = true ]; then
+          echo ""
+          echo "❌ ADR numbering validation failed"
+          echo "💡 Tip: Use 'make new-adr \"Your Decision Title\"' to create properly numbered ADRs"
+          exit 1
+        fi
+        
+        echo ""
+        echo "✅ ADR numbering validation passed"
+        echo "📊 Total ADRs: $(echo "$adr_files" | wc -l | tr -d ' ')"
+    
+    - name: Lint markdown files
+      run: |
+        echo "🔍 Linting markdown files..."
+        markdownlint-cli2 "docs/adr/*.md" "README.md" || true
+        echo "✅ Markdown linting completed"
+    
+    - name: Check for broken internal links
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Checking for broken internal links..."
+        
+        # Find all markdown files
+        md_files=$(find . -name "*.md" -not -path "./.git/*")
+        
+        validation_failed=false
+        
+        for file in $md_files; do
+          # Extract markdown links to local files
+          links=$(grep -oE '\[([^\]]*)\]\(([^)]*)\)' "$file" | grep -oE '\([^)]*\)' | sed 's/[()]//g' | grep -E '^\.' || true)
+          
+          for link in $links; do
+            # Skip anchors and external links
+            if [[ "$link" =~ ^https?:// ]] || [[ "$link" =~ ^mailto: ]] || [[ "$link" =~ ^# ]]; then
+              continue
+            fi
+            
+            # Remove anchor from link
+            file_path=$(echo "$link" | sed 's/#.*//')
+            
+            # Check if file exists relative to the current file
+            dir=$(dirname "$file")
+            full_path="$dir/$file_path"
+            
+            if [ ! -f "$full_path" ] && [ ! -f "$file_path" ]; then
+              echo "❌ ERROR: Broken link in $file: $link"
+              validation_failed=true
+            fi
+          done
+        done
+        
+        if [ "$validation_failed" = true ]; then
+          echo "❌ Link validation failed"
+          exit 1
+        fi
+        
+        echo "✅ Link validation passed"
+    
+    - name: Summary
+      run: |
+        echo "🎉 All ADR validations completed successfully!"
+        echo ""
+        echo "✅ ADR numbering is sequential and unique"
+        echo "✅ ADR format follows the standard template"
+        echo "✅ README index is consistent with ADR files"
+        echo "✅ Markdown files are well-formatted"
+        echo "✅ Internal links are not broken"

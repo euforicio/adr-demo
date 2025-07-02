@@ -1,0 +1,129 @@
+name: Validate ADR Setup
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Validate ADR Structure
+      run: |
+        echo "🔍 Validating ADR repository structure..."
+        
+        # Check critical files exist
+        critical_files=(
+          "docs/index.html"
+          "docs/css/main.css"
+          "docs/js/app.js"
+          "docs/js/adr-loader.js"
+          "docs/adr/template.md"
+          "scripts/generate-adr-index.sh"
+          "Makefile"
+        )
+        
+        missing_files=()
+        for file in "${critical_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            missing_files+=("$file")
+          fi
+        done
+        
+        if [ ${#missing_files[@]} -ne 0 ]; then
+          echo "❌ Missing critical files:"
+          printf '   %s\n' "${missing_files[@]}"
+          exit 1
+        fi
+        
+        echo "✅ All critical files present"
+        
+    - name: Validate ADRs
+      run: |
+        echo "📄 Validating ADR files..."
+        chmod +x scripts/validate-adrs.sh
+        ./scripts/validate-adrs.sh
+        
+    - name: Test ADR Index Generation
+      run: |
+        echo "🔄 Testing ADR index generation..."
+        chmod +x scripts/generate-adr-index.sh
+        ./scripts/generate-adr-index.sh
+        
+        # Verify the generated index
+        if [ ! -f "docs/adr-index.json" ]; then
+          echo "❌ Failed to generate adr-index.json"
+          exit 1
+        fi
+        
+        # Validate JSON structure
+        if command -v jq >/dev/null 2>&1; then
+          if ! jq . docs/adr-index.json >/dev/null; then
+            echo "❌ Generated JSON is invalid"
+            exit 1
+          fi
+          
+          # Check required fields
+          required_fields=("generated" "version" "source" "adrs")
+          for field in "${required_fields[@]}"; do
+            if ! jq -e ".$field" docs/adr-index.json >/dev/null; then
+              echo "❌ Missing required field: $field"
+              exit 1
+            fi
+          done
+          
+          echo "✅ Generated valid ADR index JSON"
+        fi
+        
+    - name: Test Web Application
+      run: |
+        echo "🌐 Testing web application structure..."
+        
+        # Check that JavaScript files are valid
+        for js_file in docs/js/*.js; do
+          if [ -f "$js_file" ]; then
+            # Basic syntax check - look for obvious syntax errors
+            if grep -q "unexpected token\|syntax error\|unterminated string" "$js_file" 2>/dev/null; then
+              echo "❌ Potential syntax error in $js_file"
+              exit 1
+            fi
+          fi
+        done
+        
+        # Check CSS files
+        for css_file in docs/css/*.css; do
+          if [ -f "$css_file" ]; then
+            # Basic CSS validation - check for unclosed brackets
+            if [ "$(grep -c '{' "$css_file")" -ne "$(grep -c '}' "$css_file")" ]; then
+              echo "⚠️  Mismatched brackets in $css_file"
+            fi
+          fi
+        done
+        
+        echo "✅ Web application files appear valid"
+        
+    - name: Show Repository Statistics
+      run: |
+        echo "📊 Repository Statistics"
+        echo "======================="
+        
+        adr_count=$(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l | tr -d ' ')
+        echo "Total ADRs: $adr_count"
+        
+        if command -v jq >/dev/null 2>&1 && [ -f "docs/adr-index.json" ]; then
+          echo "Status breakdown:"
+          jq -r '.adrs | group_by(.status) | .[] | "\(.length) \(.[0].status)"' docs/adr-index.json | sort
+          
+          echo ""
+          echo "Diagram types:"
+          jq -r '.adrs | group_by(.diagramType) | .[] | "\(.length) \(.[0].diagramType)"' docs/adr-index.json | sort
+        fi
+        
+        echo ""
+        echo "✅ Validation completed successfully!"
+        echo "🚀 Ready for deployment to GitHub Pages"

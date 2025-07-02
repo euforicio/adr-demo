@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Decision Records - ShopFlow</title>
+    <meta name="description" content="Architecture Decision Records for ShopFlow e-commerce platform">
+    <meta name="keywords" content="ADR, Architecture, Decisions, Documentation, ShopFlow">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-graphql.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/adr-theme.css">
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading ADRs...</p>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app" class="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <h1 id="home-link" class="home-link" role="button" tabindex="0" title="Return to home">
+                    <span class="icon">📋</span>
+                    Architecture Decisions
+                </h1>
+                <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+
+            <!-- Search -->
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Search ADRs..." 
+                    aria-label="Search Architecture Decision Records"
+                >
+                <button id="search-clear" class="search-clear" aria-label="Clear search">×</button>
+            </div>
+
+            <!-- Filter -->
+            <div class="filter-container">
+                <select id="status-filter" aria-label="Filter by status">
+                    <option value="">All Status</option>
+                    <option value="Proposed">Proposed</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Deprecated">Deprecated</option>
+                    <option value="Superseded">Superseded</option>
+                </select>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="adr-nav">
+                <ul id="adr-list" class="adr-list">
+                    <!-- ADR items will be dynamically populated -->
+                </ul>
+            </nav>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <p class="project-info">ShopFlow Platform</p>
+                <button id="docs-link" class="footer-link" type="button">📚 Documentation</button>
+                <a href="https://github.com/euforicio/adr-demo" class="footer-link">🔗 GitHub</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <!-- Content Header -->
+            <header class="content-header">
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item home-breadcrumb" role="button" tabindex="0" title="Return to home">Architecture Decisions</span>
+                    <span id="current-adr-breadcrumb" class="breadcrumb-item"></span>
+                </div>
+                <div class="content-actions">
+                    <button id="print-btn" class="action-btn" title="Print ADR">
+                        <span class="icon">🖨️</span>
+                    </button>
+                    <button id="fullscreen-btn" class="action-btn" title="Toggle fullscreen">
+                        <span class="icon">⛶</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="welcome-screen">
+                <div class="welcome-content">
+                    <h1>
+                        <span class="icon">📋</span>
+                        Architecture Decision Records
+                    </h1>
+                    <p class="subtitle">ShopFlow E-commerce Platform</p>
+                    
+                    <div class="welcome-description">
+                        <p>
+                            Welcome to the Architecture Decision Records (ADRs) for the ShopFlow platform. 
+                            These documents capture important architectural decisions made during the development 
+                            of our e-commerce platform.
+                        </p>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <span class="stat-number" id="total-adrs">0</span>
+                                <span class="stat-label">Total ADRs</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-number" id="accepted-adrs">0</span>
+                                <span class="stat-label">Accepted</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-number" id="c4-diagrams">0</span>
+                                <span class="stat-label">With Diagrams</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="getting-started">
+                        <h2>Getting Started</h2>
+                        <ul>
+                            <li>Select an ADR from the sidebar to view its details</li>
+                            <li>Use the search box to find specific decisions</li>
+                            <li>Filter by status to see decisions in different states</li>
+                            <li>Click on diagrams to view them in full screen</li>
+                        </ul>
+                        
+                        <div class="welcome-actions">
+                            <button id="show-docs-btn" class="action-button primary">
+                                📚 View Documentation
+                            </button>
+                            <button id="show-template-btn" class="action-button secondary">
+                                📄 ADR Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADR Content -->
+            <article id="adr-content" class="adr-content" style="display: none;">
+                <!-- Table of Contents -->
+                <nav id="toc" class="table-of-contents">
+                    <h3>Contents</h3>
+                    <ul id="toc-list"></ul>
+                </nav>
+
+                <!-- ADR Document -->
+                <div id="adr-document" class="adr-document">
+                    <!-- Content will be dynamically loaded -->
+                </div>
+            </article>
+
+            <!-- Error Screen -->
+            <div id="error-screen" class="error-screen" style="display: none;">
+                <div class="error-content">
+                    <h2>😞 Oops! Something went wrong</h2>
+                    <p id="error-message">Unable to load the requested ADR.</p>
+                    <button id="retry-btn" class="retry-btn">Try Again</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="mobile-overlay"></div>
+
+    <!-- JavaScript -->
+    <script src="js/app.js"></script>
+    <script src="js/adr-loader.js"></script>
+    <script src="js/navigation.js"></script>
+
+    <!-- Initialize Application -->
+    <script>
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            ADRApp.init();
+        });
+
+        // Configure Mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            themeVariables: {
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            sequence: {
+                useMaxWidth: true
+            },
+            c4: {
+                useMaxWidth: true
+            }
+        });
+
+        // Configure Prism.js
+        if (typeof Prism !== 'undefined') {
+            Prism.plugins.autoloader.languages_path = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/';
+        }
+    </script>
+</body>
+</html>

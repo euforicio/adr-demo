@@ -1,0 +1,97 @@
+# GitHub Pages Configuration for ADR Web App
+
+# Build settings
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-default-layout
+  - jekyll-titles-from-headings
+
+# Markdown settings
+markdown: kramdown
+highlighter: rouge
+
+# Repository information
+title: "Architecture Decision Records"
+description: "Interactive documentation for ShopFlow platform architecture decisions"
+url: "https://euforicio.github.io"
+baseurl: "/adr-demo"
+
+# SEO and social
+author:
+  name: "Architecture Review Board"
+  
+twitter:
+  username: euforicio
+  card: summary
+
+logo: /assets/images/logo.png
+
+social:
+  name: Architecture Decision Records
+  links:
+    - https://github.com/euforicio/adr-demo
+
+# Include/exclude files
+include:
+  - "_*_.html"
+  - "_*_.json"
+  - "_*_.xml"
+
+exclude:
+  - "README.md"
+  - "Gemfile"
+  - "Gemfile.lock"
+  - "node_modules"
+  - "vendor/bundle/"
+  - "vendor/cache/"
+  - "vendor/gems/"
+  - "vendor/ruby/"
+  - ".github/"
+  - "*.gemspec"
+
+# Collections (if needed for future expansion)
+collections:
+  adrs:
+    output: false
+
+# Default front matter
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "adr"
+      type: "pages"  
+    values:
+      layout: "adr"
+
+# Theme settings (if using a theme)
+# theme: minima
+
+# Liquid settings
+liquid:
+  error_mode: warn
+  strict_filters: false
+  strict_variables: false
+
+# Sass settings
+sass:
+  style: compressed
+  sass_dir: _sass
+
+# Performance settings
+incremental: false
+profile: false
+
+# Development settings
+livereload: false
+open_url: false
+
+# Security
+safe: true
+
+# Timezone
+timezone: UTC
