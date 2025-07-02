@@ -1,7 +1,5 @@
 {
-  "generated": "2025-07-02T23:07:02Z",
-  "version": "1.0",
-  "source": "generate-adr-index.sh",
+  "generated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "adrs": [
     {
       "number": "0001",
@@ -10,7 +8,8 @@
       "diagramType": "-",
       "filePath": "adr/0001-record-architecture-decisions.md",
       "fileName": "0001-record-architecture-decisions.md"
-    },
+    }
+,
     {
       "number": "0002",
       "title": "Establish Architecture Review Board",
@@ -18,7 +17,8 @@
       "diagramType": "Dynamic",
       "filePath": "adr/0002-establish-architecture-review-board.md",
       "fileName": "0002-establish-architecture-review-board.md"
-    },
+    }
+,
     {
       "number": "0003",
       "title": "Adopt Microservices Architecture",
@@ -26,7 +26,8 @@
       "diagramType": "Context",
       "filePath": "adr/0003-adopt-microservices-architecture.md",
       "fileName": "0003-adopt-microservices-architecture.md"
-    },
+    }
+,
     {
       "number": "0004",
       "title": "Choose Database Per Service",
@@ -34,7 +35,8 @@
       "diagramType": "Container",
       "filePath": "adr/0004-choose-database-per-service.md",
       "fileName": "0004-choose-database-per-service.md"
-    },
+    }
+,
     {
       "number": "0005",
       "title": "Implement API Gateway Pattern",
@@ -42,7 +44,8 @@
       "diagramType": "Component",
       "filePath": "adr/0005-implement-api-gateway-pattern.md",
       "fileName": "0005-implement-api-gateway-pattern.md"
-    },
+    }
+,
     {
       "number": "0006",
       "title": "Use Event-Driven Communication",
@@ -50,7 +53,8 @@
       "diagramType": "Dynamic",
       "filePath": "adr/0006-use-event-driven-communication.md",
       "fileName": "0006-use-event-driven-communication.md"
-    },
+    }
+,
     {
       "number": "0007",
       "title": "Implement GraphQL API",
@@ -58,7 +62,8 @@
       "diagramType": "Component",
       "filePath": "adr/0007-implement-graphql-api.md",
       "fileName": "0007-implement-graphql-api.md"
-    },
+    }
+,
     {
       "number": "0008",
       "title": "Use MongoDB for Session Storage",
@@ -66,7 +71,8 @@
       "diagramType": "Container",
       "filePath": "adr/0008-use-mongodb-for-session-storage.md",
       "fileName": "0008-use-mongodb-for-session-storage.md"
-    },
+    }
+,
     {
       "number": "0009",
       "title": "Use Redis for Session Storage",
@@ -74,7 +80,8 @@
       "diagramType": "Container",
       "filePath": "adr/0009-use-redis-for-session-storage.md",
       "fileName": "0009-use-redis-for-session-storage.md"
-    },
+    }
+,
     {
       "number": "0010",
       "title": "Adopt Hybrid Session Storage",
