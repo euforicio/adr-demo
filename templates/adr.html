@@ -1,0 +1,166 @@
+{{template "base.html" .}}
+
+{{define "breadcrumb"}}
+{{if ne .ADR.Category ""}}
+<span class="text-gray-400 dark:text-gray-500 mx-2">›</span>
+<span class="text-gray-600 dark:text-gray-300">📁 {{.ADR.Category}}</span>
+{{end}}
+<span class="text-gray-400 dark:text-gray-500 mx-2">›</span>
+<span class="text-gray-900 dark:text-gray-100 font-medium">ADR-{{.ADR.Number}}: {{.ADR.Title}}</span>
+{{end}}
+
+{{define "actions"}}
+<button class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:-translate-y-0.5 transition-all duration-200" onclick="window.print()" title="Print ADR">
+    🖨️
+</button>
+<button class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:-translate-y-0.5 transition-all duration-200" onclick="toggleFullscreen()" title="Toggle fullscreen">
+    ⛶
+</button>
+{{end}}
+
+{{define "content"}}
+<article class="max-w-4xl mx-auto">
+    <!-- ADR Header -->
+    <header class="mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <span class="text-4xl font-bold text-blue-600 dark:text-blue-400 font-mono">ADR-{{.ADR.Number}}</span>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{if eq .ADR.Status "Accepted"}}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{{else if eq .ADR.Status "Proposed"}}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{{else if eq .ADR.Status "Deprecated"}}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{{else if eq .ADR.Status "Superseded"}}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200{{else}}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{{end}}">
+                    {{statusEmoji .ADR.Status}} {{.ADR.Status}}
+                </span>
+                {{if ne .ADR.DiagramType "-"}}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{{.ADR.DiagramType}} Diagram</span>
+                {{end}}
+            </div>
+        </div>
+    </header>
+    
+    <!-- ADR Content -->
+    <div class="flex gap-8">
+        <!-- Table of Contents (if needed) -->
+        <nav class="hidden lg:block w-64 flex-shrink-0" id="toc" style="display: none;">
+            <div class="sticky top-24">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contents</h3>
+                <ul id="toc-list" class="space-y-2 text-sm"></ul>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <div class="flex-1 min-w-0">
+            <div class="prose max-w-none">
+                {{.ADR.HTMLContent}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="flex justify-between items-center mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+        {{if .Previous}}
+        <a href="{{$.BaseURL}}/adr-{{.Previous.Number}}.html" class="flex-1 max-w-sm group">
+            <div class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">
+                <div class="text-blue-600 dark:text-blue-400 text-xl">←</div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Previous</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate">ADR-{{.Previous.Number}}: {{.Previous.Title}}</div>
+                </div>
+            </div>
+        </a>
+        {{else}}
+        <div class="flex-1"></div>
+        {{end}}
+        
+        {{if .Next}}
+        <a href="{{$.BaseURL}}/adr-{{.Next.Number}}.html" class="flex-1 max-w-sm group ml-4">
+            <div class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">
+                <div class="flex-1 min-w-0 text-right">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Next</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate">ADR-{{.Next.Number}}: {{.Next.Title}}</div>
+                </div>
+                <div class="text-blue-600 dark:text-blue-400 text-xl">→</div>
+            </div>
+        </a>
+        {{else}}
+        <div class="flex-1"></div>
+        {{end}}
+    </nav>
+    
+    <!-- Footer -->
+    <footer class="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400">
+                <strong class="text-gray-900 dark:text-white">ADR-{{.ADR.Number}}</strong> 
+                • Status: <strong class="text-gray-900 dark:text-white">{{.ADR.Status}}</strong>
+                {{if ne .ADR.DiagramType "-"}} • Contains {{.ADR.DiagramType}} diagram{{end}}
+            </div>
+            <a href="https://github.com/euforicio/adr-demo/blob/main/{{.ADR.FilePath}}" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200">
+                📝 Edit on GitHub
+            </a>
+        </div>
+    </footer>
+</article>
+
+<script>
+// Generate table of contents
+document.addEventListener('DOMContentLoaded', function() {
+    generateTableOfContents();
+    setupScrollSpy();
+});
+
+function generateTableOfContents() {
+    const headings = document.querySelectorAll('.adr-main-content h2, .adr-main-content h3, .adr-main-content h4');
+    const toc = document.getElementById('toc');
+    const tocList = document.getElementById('toc-list');
+    
+    if (headings.length > 2) {
+        toc.style.display = 'block';
+        
+        headings.forEach((heading, index) => {
+            const level = parseInt(heading.tagName.charAt(1));
+            const id = heading.id || `heading-${index}`;
+            heading.id = id;
+            
+            const li = document.createElement('li');
+            li.className = `toc-level-${level}`;
+            li.innerHTML = `<a href="#${id}" class="toc-link">${heading.textContent}</a>`;
+            tocList.appendChild(li);
+        });
+    }
+}
+
+function setupScrollSpy() {
+    const links = document.querySelectorAll('.toc-link');
+    const headings = document.querySelectorAll('.adr-main-content h2, .adr-main-content h3, .adr-main-content h4');
+    
+    if (links.length === 0 || headings.length === 0) return;
+    
+    function updateActiveLink() {
+        let current = '';
+        
+        headings.forEach(heading => {
+            const rect = heading.getBoundingClientRect();
+            if (rect.top <= 100) {
+                current = heading.id;
+            }
+        });
+        
+        links.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    window.addEventListener('scroll', updateActiveLink);
+    updateActiveLink();
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
+{{end}}

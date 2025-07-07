@@ -42,7 +42,7 @@ validate-links: ## Check for broken links in ADRs
 lint: ## Lint markdown files
 	@echo "📝 Linting markdown files..."
 	@if command -v markdownlint >/dev/null 2>&1; then \
-		markdownlint docs/adr/*.md README.md; \
+		markdownlint adr/*.md README.md; \
 	else \
 		echo "⚠️  markdownlint not installed. Install with: npm install -g markdownlint-cli"; \
 	fi
@@ -58,7 +58,7 @@ test: validate lint ## Run all tests and validation
 
 clean: ## Clean generated files
 	@echo "🧹 Cleaning generated files..."
-	@rm -f docs/adr-index.json
+	@rm -f adr-index.json
 	@echo "✅ Cleaned generated files"
 
 install-deps: ## Install development dependencies
@@ -73,9 +73,9 @@ install-deps: ## Install development dependencies
 watch: ## Watch for changes and regenerate index
 	@echo "👀 Watching for ADR changes..."
 	@if command -v fswatch >/dev/null 2>&1; then \
-		fswatch -o docs/adr/ | xargs -n1 -I{} make generate-index; \
+		fswatch -o adr/ | xargs -n1 -I{} make generate-index; \
 	elif command -v inotifywait >/dev/null 2>&1; then \
-		while inotifywait -e modify,create,delete docs/adr/; do make generate-index; done; \
+		while inotifywait -e modify,create,delete adr/; do make generate-index; done; \
 	else \
 		echo "⚠️  File watching requires fswatch (macOS) or inotify-tools (Linux)"; \
 		echo "   Install with: brew install fswatch (macOS) or apt-get install inotify-tools (Linux)"; \
@@ -123,7 +123,7 @@ serve-linux: generate-index ## Start server on Linux with xdg-open
 docs: ## Generate documentation
 	@echo "📚 Documentation available at:"
 	@echo "   README.md - Main project documentation"
-	@echo "   docs/adr/ - Architecture Decision Records"
+	@echo "   adr/ - Architecture Decision Records"
 	@echo "   docs/index.html - Web interface"
 
 # GitHub Pages
@@ -144,14 +144,14 @@ pages-test: generate-index serve-simple ## Test GitHub Pages setup locally
 status: ## Show repository status
 	@echo "📊 ADR Repository Status"
 	@echo "======================="
-	@echo "Total ADRs: $$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | wc -l | tr -d ' ')"
-	@echo "Accepted:   $$(grep -l '^Accepted$$' docs/adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
-	@echo "Proposed:   $$(grep -l '^Proposed$$' docs/adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
-	@echo "Deprecated: $$(grep -l '^Deprecated$$' docs/adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
-	@echo "Superseded: $$(grep -l '^Superseded$$' docs/adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
+	@echo "Total ADRs: $$(find adr -name '[0-9][0-9][0-9][0-9]-*.md' | wc -l | tr -d ' ')"
+	@echo "Accepted:   $$(grep -l '^Accepted$$' adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
+	@echo "Proposed:   $$(grep -l '^Proposed$$' adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
+	@echo "Deprecated: $$(grep -l '^Deprecated$$' adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
+	@echo "Superseded: $$(grep -l '^Superseded$$' adr/*.md 2>/dev/null | wc -l | tr -d ' ')"
 	@echo ""
-	@if [ -f docs/adr-index.json ]; then \
-		echo "Index file: ✅ Present (generated $$(jq -r '.generated' docs/adr-index.json 2>/dev/null || echo 'unknown'))"; \
+	@if [ -f adr-index.json ]; then \
+		echo "Index file: ✅ Present (generated $$(jq -r '.generated' adr-index.json 2>/dev/null || echo 'unknown'))"; \
 	else \
 		echo "Index file: ❌ Missing (run 'make generate-index')"; \
 	fi

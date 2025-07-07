@@ -1,0 +1,47 @@
+# ADR Tool Configuration - Custom Status Icons Example
+adr_directory: "adr"
+output_directory: "docs"
+base_url: ""
+default_category: "General"
+
+allowed_categories:
+  - "Core Architecture"
+  - "Data Management"
+  - "Frontend Development"
+  - "Security"
+  - "Infrastructure"
+  - "General"
+
+allowed_statuses:
+  - "Proposed"
+  - "Accepted"
+  - "Deprecated"
+  - "Superseded"
+  - "Under Review"
+
+# Custom status configuration with emojis
+status_config:
+  "Accepted":
+    icon: "✅"           # Emoji instead of text
+    color: "green"
+    css_class: "bg-green-500"
+  "Proposed":
+    icon: "⏳"           # Emoji instead of text
+    color: "yellow"
+    css_class: "bg-yellow-500"
+  "Deprecated":
+    icon: "🗑️"          # Emoji instead of text
+    color: "red"
+    css_class: "bg-red-500"
+  "Superseded":
+    icon: "⬆️"          # Emoji instead of text
+    color: "purple"
+    css_class: "bg-purple-500"
+  "Under Review":
+    icon: "👀"           # Custom status with emoji
+    color: "blue"
+    css_class: "bg-blue-500"
+
+minify: false
+verbose: false
+dev_mode: false

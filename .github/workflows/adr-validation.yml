@@ -3,12 +3,12 @@ name: ADR Validation
 on:
   pull_request:
     paths:
-      - 'docs/adr/**'
+      - 'adr/**'
       - 'README.md'
   push:
     branches: [main]
     paths:
-      - 'docs/adr/**'
+      - 'adr/**'
       - 'README.md'
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
     
     - name: Install dependencies
       run: |
@@ -40,7 +40,7 @@ jobs:
         echo "🔍 Validating ADR numbering..."
         
         # Get all ADR files
-        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
+        adr_files=$(find adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
         
         if [ -z "$adr_files" ]; then
           echo "✅ No numbered ADR files found"
@@ -82,7 +82,7 @@ jobs:
         echo "🔍 Validating ADR format..."
         
         # Find all ADR files (excluding template)
-        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md')
+        adr_files=$(find adr -name '[0-9][0-9][0-9][0-9]-*.md')
         
         if [ -z "$adr_files" ]; then
           echo "✅ No ADR files to validate"
@@ -146,7 +146,7 @@ jobs:
         echo "🔍 Validating ADR numbering sequence..."
         
         # Get all ADR files sorted by number
-        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
+        adr_files=$(find adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
         
         if [ -z "$adr_files" ]; then
           echo "✅ No ADR files found - this is valid for a new repository"
@@ -209,7 +209,7 @@ jobs:
     - name: Lint markdown files
       run: |
         echo "🔍 Linting markdown files..."
-        markdownlint-cli2 "docs/adr/*.md" "README.md" || true
+        markdownlint-cli2 "adr/*.md" "README.md" || true
         echo "✅ Markdown linting completed"
     
     - name: Check for broken internal links

@@ -1,0 +1,179 @@
+name: Build and Deploy ADR Site
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'adr/**/*.md'
+      - 'templates/**'
+      - 'static/**'
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'README.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'adr/**/*.md'
+      - 'templates/**'
+      - 'static/**'
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'README.md'
+  workflow_dispatch: # Allow manual trigger
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build and validate job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+            
+      - name: Install dependencies
+        run: go mod download
+        
+      - name: Build ADR generator
+        run: |
+          echo "🔨 Building ADR generator..."
+          go build -o adr-gen .
+          chmod +x adr-gen
+          
+      - name: Validate ADRs
+        run: |
+          echo "🔍 Validating ADR files..."
+          ./adr-gen validate
+          
+      - name: Generate static site
+        run: |
+          echo "🏗️ Generating static site..."
+          ./adr-gen build --output docs --base-url "/adr-demo" --minify
+          
+      - name: Validate generated site
+        run: |
+          echo "✅ Validating generated site..."
+          
+          # Check that required files exist
+          required_files=(
+            "docs/index.html"
+            "docs/search.html"
+            "docs/search-index.json"
+            "docs/static/css/main.css"
+            "docs/static/js/main.js"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file"
+          done
+          
+          # Check that ADR HTML files were generated
+          adr_count=$(find docs -name "adr-[0-9][0-9][0-9][0-9].html" | wc -l)
+          echo "📄 Generated $adr_count ADR HTML files"
+          
+          if [ "$adr_count" -eq 0 ]; then
+            echo "❌ No ADR HTML files generated"
+            exit 1
+          fi
+          
+          # Validate search index JSON
+          if command -v jq >/dev/null 2>&1; then
+            if ! jq . docs/search-index.json >/dev/null; then
+              echo "❌ Invalid JSON in search-index.json"
+              exit 1
+            fi
+            echo "✅ Search index JSON is valid"
+          fi
+          
+          # Check that documentation template exists in source
+          if [ ! -f "templates/docs.html" ]; then
+            echo "❌ Documentation template missing"
+            exit 1
+          fi
+          echo "✅ Documentation template found"
+          
+          # Verify that the server can handle /docs route (basic check)
+          if grep -q "handleDocs" internal/server/server.go; then
+            echo "✅ Documentation route handler found"
+          else
+            echo "❌ Documentation route handler missing"
+            exit 1
+          fi
+          
+          echo "🎉 All validation checks passed!"
+          echo "📖 Documentation feature validated"
+          
+      - name: Setup Pages (only on main branch)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact (only on main branch)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+          
+      - name: Display build summary
+        run: |
+          echo "📊 Build Summary:"
+          echo "=================="
+          echo "ADR files processed: $(find adr -name "*.md" | wc -l)"
+          echo "HTML files generated: $(find docs -name "*.html" | wc -l)"
+          echo "Static assets: $(find docs/static -type f | wc -l)"
+          echo "Total output size: $(du -sh docs | cut -f1)"
+          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "🚀 Ready for deployment to GitHub Pages"
+          else
+            echo "🔍 Build validation completed (no deployment on PR/non-main)"
+          fi
+
+  # Deployment job (only runs on main branch push)
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        
+      - name: Display deployment info
+        run: |
+          echo "🚀 ADR Site deployed successfully!"
+          echo "🌐 URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "📋 Site features:"
+          echo "   • Modern Go-based static site generator"
+          echo "   • Responsive design with CSS View Transitions"
+          echo "   • Full-text search with filtering"
+          echo "   • Mermaid diagram support"
+          echo "   • Category-based organization"
+          echo "   • Mobile-friendly interface"
+          echo "   • Integrated documentation viewer"
+          echo "   • Dynamic server support for development"
+          echo ""
+          echo "💡 The site will be available at the URL above in a few minutes."

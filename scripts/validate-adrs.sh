@@ -18,7 +18,7 @@ errors=0
 warnings=0
 
 # Find all ADR files
-find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | sort | while IFS= read -r file; do
+find adr -name "[0-9][0-9][0-9][0-9]-*.md" | sort | while IFS= read -r file; do
   filename=$(basename "$file")
   number=$(echo "$filename" | sed 's/^\([0-9]\{4\}\)-.*/\1/')
   
@@ -73,7 +73,7 @@ echo ""
 echo "🔢 Checking sequential numbering..."
 
 # Get all ADR files sorted by number
-adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
+adr_files=$(find adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
 
 if [ -z "$adr_files" ]; then
   echo "  ✅ No ADR files found"
@@ -118,7 +118,7 @@ fi
 echo ""
 echo "📊 Validation Summary"
 echo "===================="
-echo "Total ADRs: $(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l | tr -d ' ')"
+echo "Total ADRs: $(find adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l | tr -d ' ')"
 echo "Errors: $errors"
 echo "Warnings: $warnings"
 

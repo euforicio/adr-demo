@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Generate ADR Index JSON
-# This script scans the docs/adr directory and creates an adr-index.json file
+# This script scans the adr directory and creates an adr-index.json file
 # that the web application can use to load ADRs dynamically
 
 set -e
@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 echo "🔄 Generating ADR index..."
 
 # Output file
-output_file="docs/adr-index.json"
+output_file="adr-index.json"
 
 # Start JSON structure
 cat > "$output_file" << EOF
@@ -24,7 +24,7 @@ cat > "$output_file" << EOF
 EOF
 
 # Find all ADR files and create array
-adr_files=($(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | sort))
+adr_files=($(find adr -name "[0-9][0-9][0-9][0-9]-*.md" | sort))
 
 # Process each file
 for i in "${!adr_files[@]}"; do
@@ -124,9 +124,9 @@ else
 fi
 
 # Report results
-adr_count=$(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l | tr -d ' ')
+adr_count=$(find adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l | tr -d ' ')
 echo "✅ Generated ADR index with $adr_count entries"
-echo "📄 Output: docs/adr-index.json"
+echo "📄 Output: adr-index.json"
 
 # Show summary if jq is available
 if command -v jq >/dev/null 2>&1; then
@@ -135,11 +135,11 @@ if command -v jq >/dev/null 2>&1; then
   echo "   Total ADRs: $adr_count"
   
   # Count by status
-  if [ -f docs/adr-index.json ]; then
-    accepted=$(jq -r '.adrs[] | select(.status == "Accepted") | .number' docs/adr-index.json | wc -l | tr -d ' ')
-    proposed=$(jq -r '.adrs[] | select(.status == "Proposed") | .number' docs/adr-index.json | wc -l | tr -d ' ')
-    deprecated=$(jq -r '.adrs[] | select(.status == "Deprecated") | .number' docs/adr-index.json | wc -l | tr -d ' ')
-    superseded=$(jq -r '.adrs[] | select(.status == "Superseded") | .number' docs/adr-index.json | wc -l | tr -d ' ')
+  if [ -f adr-index.json ]; then
+    accepted=$(jq -r '.adrs[] | select(.status == "Accepted") | .number' adr-index.json | wc -l | tr -d ' ')
+    proposed=$(jq -r '.adrs[] | select(.status == "Proposed") | .number' adr-index.json | wc -l | tr -d ' ')
+    deprecated=$(jq -r '.adrs[] | select(.status == "Deprecated") | .number' adr-index.json | wc -l | tr -d ' ')
+    superseded=$(jq -r '.adrs[] | select(.status == "Superseded") | .number' adr-index.json | wc -l | tr -d ' ')
     
     echo "   Accepted: $accepted"
     echo "   Proposed: $proposed" 
@@ -147,7 +147,7 @@ if command -v jq >/dev/null 2>&1; then
     echo "   Superseded: $superseded"
     
     # Count diagrams
-    with_diagrams=$(jq -r '.adrs[] | select(.diagramType != "-") | .number' docs/adr-index.json | wc -l | tr -d ' ')
+    with_diagrams=$(jq -r '.adrs[] | select(.diagramType != "-") | .number' adr-index.json | wc -l | tr -d ' ')
     echo "   With Diagrams: $with_diagrams"
   fi
 fi

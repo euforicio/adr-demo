@@ -1,0 +1,54 @@
+# ADR Tool Configuration
+# This file configures the ADR documentation generator
+
+# Directory containing ADR markdown files
+adr_directory: "adr"
+
+# Output directory for generated site
+output_directory: "docs"
+
+# Base URL for the site (useful for subdirectory deployments)
+base_url: ""
+
+# Default category for ADRs without a specified category
+default_category: "General"
+
+# Allowed categories (ADRs with unlisted categories will use default_category)
+allowed_categories:
+  - "Core Architecture"
+  - "Data Management"
+  - "Frontend Development"
+  - "Security"
+  - "Infrastructure"
+  - "General"
+
+# Allowed statuses for ADRs
+allowed_statuses:
+  - "Proposed"
+  - "Accepted"
+  - "Deprecated"
+  - "Superseded"
+
+# Status configuration: icons, colors, and CSS classes
+status_config:
+  "Accepted":
+    icon: "✓"
+    color: "green"
+    css_class: "bg-green-500"
+  "Proposed":
+    icon: "●"
+    color: "yellow"
+    css_class: "bg-yellow-500"
+  "Deprecated":
+    icon: "✗"
+    color: "red"
+    css_class: "bg-red-500"
+  "Superseded":
+    icon: "↑"
+    color: "purple"
+    css_class: "bg-purple-500"
+
+# Build settings
+minify: false
+verbose: false
+dev_mode: false

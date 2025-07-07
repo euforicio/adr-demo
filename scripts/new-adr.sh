@@ -9,13 +9,13 @@ set -e
 cd "$(dirname "$0")/.."
 
 # Check if template exists
-if [ ! -f "docs/adr/template.md" ]; then
-  echo "❌ Template file not found: docs/adr/template.md"
+if [ ! -f "adr/template.md" ]; then
+  echo "❌ Template file not found: adr/template.md"
   exit 1
 fi
 
 # Find the next ADR number
-last_number=$(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" -exec basename {} \; | sed 's/^\([0-9]\{4\}\)-.*/\1/' | sort -n | tail -1)
+last_number=$(find adr -name "[0-9][0-9][0-9][0-9]-*.md" -exec basename {} \; | sed 's/^\([0-9]\{4\}\)-.*/\1/' | sort -n | tail -1)
 
 if [ -z "$last_number" ]; then
   next_number="0001"
@@ -37,7 +37,7 @@ fi
 filename_title=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g')
 
 # Create filename
-filename="docs/adr/${next_number}-${filename_title}.md"
+filename="adr/${next_number}-${filename_title}.md"
 
 # Check if file already exists
 if [ -f "$filename" ]; then
@@ -46,7 +46,7 @@ if [ -f "$filename" ]; then
 fi
 
 # Copy template and customize
-cp "docs/adr/template.md" "$filename"
+cp "adr/template.md" "$filename"
 
 # Replace placeholders in the new file
 sed -i.bak "s/# \[Title\]/# $title/" "$filename"

@@ -1,0 +1,20 @@
+{{template "base.html" .}}
+
+{{define "breadcrumb"}}
+    <span class="text-gray-400 dark:text-gray-500">›</span>
+    <span class="text-gray-700 dark:text-gray-200">Documentation</span>
+{{end}}
+
+{{define "content"}}
+<div class="max-w-5xl mx-auto">
+    <div class="prose dark:prose-invert prose-lg max-w-none">
+        {{.Content}}
+    </div>
+</div>
+{{end}}
+
+{{define "actions"}}
+<button class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:-translate-y-0.5 transition-all duration-200" onclick="window.print()" title="Print page">
+    🖨️
+</button>
+{{end}}

@@ -1,0 +1,93 @@
+{
+  "generated": "11",
+  "items": [
+    {
+      "number": "0001",
+      "title": "Record Architecture Decisions",
+      "status": "Accepted",
+      "content": " Record Architecture Decisions\n\n Status\n\nAccepted\n\n Context\n\nWe need to record the architectural decisions made on our ShopFlow e-commerce platform project. Architecture decisions are important for:\n\n Understanding the reasoning behind current system design\n Onboarding new team members effectively  \n Avoiding repeated discussions on settled matters\n Learning from past decisions and their outcomes\n Maintaining consistency in architectural approach\n\nWe have been making architecture decisions throu...",
+      "diagramType": "-",
+      "url": "adr-0001.html"
+    },
+    {
+      "number": "0002",
+      "title": "Establish Architecture Review Board",
+      "status": "Accepted",
+      "content": " Establish Architecture Review Board\n\n Status\n\nAccepted\n\n Context\n\nAs our ShopFlow platform grows in complexity, we need a structured approach to review and approve architectural decisions. Currently, architectural decisions are made ad-hoc by individual teams or developers, leading to:\n\n Inconsistent architectural patterns across the platform\n Lack of visibility into system-wide architectural changes\n Risk of conflicting design decisions between teams\n Difficulty maintaining architectural coher...",
+      "diagramType": "Flowchart",
+      "url": "adr-0002.html"
+    },
+    {
+      "number": "0003",
+      "title": "Adopt Microservices Architecture",
+      "status": "Accepted",
+      "content": " Adopt Microservices Architecture\n\n Status\n\nAccepted\n\n Category\n\nCore Architecture\n\n Context\n\nOur ShopFlow e-commerce platform has grown from a simple monolithic application to support multiple business domains including user management, product catalog, inventory, orders, payments, and shipping. The current monolithic architecture is experiencing several challenges:\n\nCurrent Pain Points:\n Deployment of any change requires full system deployment\n Scaling individual components independently is im...",
+      "diagramType": "Context",
+      "url": "adr-0003.html"
+    },
+    {
+      "number": "0004",
+      "title": "Choose Database Per Service",
+      "status": "Accepted",
+      "content": " Choose Database Per Service\n\n Status\n\nAccepted\n\n Category\n\nData Management\n\n Context\n\nWith our adoption of microservices architecture ([ADR-0003: Adopt Microservices Architecture](0003-adopt-microservices-architecture.md)), we need to determine our data management strategy. Our current monolithic application uses a single PostgreSQL database shared across all business domains, which creates several issues:\n\nCurrent Database Challenges:\n Database schema changes require coordination across all te...",
+      "diagramType": "Container",
+      "url": "adr-0004.html"
+    },
+    {
+      "number": "0005",
+      "title": "Implement API Gateway Pattern",
+      "status": "Accepted",
+      "content": " Implement API Gateway Pattern\n\n Status\n\nAccepted\n\n Context\n\nWith our microservices architecture ([ADR-0003: Adopt Microservices Architecture](0003-adopt-microservices-architecture.md)), we now have multiple services that need to be accessed by various client applications (web, mobile, admin portal). Without a unified entry point, we face several challenges:\n\nCurrent Client-Service Communication Issues:\n Clients need to know about and connect to multiple service endpoints\n Cross-cutting concerns...",
+      "diagramType": "Component",
+      "url": "adr-0005.html"
+    },
+    {
+      "number": "0006",
+      "title": "Use Event-Driven Communication",
+      "status": "Accepted",
+      "content": " Use Event-Driven Communication\n\n Status\n\nAccepted\n\n Context\n\nWith our microservices architecture ([ADR-0003: Adopt Microservices Architecture](0003-adopt-microservices-architecture.md)) and database-per-service pattern ([ADR-0004: Choose Database Per Service](0004-choose-database-per-service.md)), we need to establish how services will communicate with each other. Currently, our services are designed to be independent, but several business processes require coordination across multiple services...",
+      "diagramType": "Sequence",
+      "url": "adr-0006.html"
+    },
+    {
+      "number": "0007",
+      "title": "Implement GraphQL API",
+      "status": "Proposed",
+      "content": " Implement GraphQL API\n\n Status\n\nProposed\n\n Category\n\nFrontend Development\n\n Context\n\nOur current REST API architecture is becoming increasingly complex as we add new features to the ShopFlow platform. We are experiencing several challenges:\n\nCurrent API Challenges:\n Multiple API calls required to fetch related data (e.g., user profile + orders + shipping info)\n Over-fetching of data on mobile clients with limited bandwidth\n Under-fetching requiring additional API calls for missing information\n ...",
+      "diagramType": "Component",
+      "url": "adr-0007.html"
+    },
+    {
+      "number": "0008",
+      "title": "Use MongoDB for Session Storage",
+      "status": "Superseded",
+      "content": " Use MongoDB for Session Storage\n\n Status\n\nSuperseded\n\n Context\n\nIn the early stages of the ShopFlow platform development, we needed a session storage solution that could handle our user authentication and shopping cart persistence requirements. At the time, we evaluated several options and decided to use MongoDB for session storage.\n\nOriginal Decision Rationale (2022):\n MongoDB provided flexible document storage for session data\n Easy to scale horizontally across multiple database nodes\n JSON-l...",
+      "diagramType": "Container",
+      "url": "adr-0008.html"
+    },
+    {
+      "number": "0009",
+      "title": "Use Redis for Session Storage",
+      "status": "Superseded",
+      "content": " Use Redis for Session Storage\n\n Status\n\nSuperseded\n\n Context\n\nFollowing the challenges identified with our MongoDB session storage implementation (see [ADR-0008: Use MongoDB for Session Storage](0008-use-mongodb-for-session-storage.md)), we needed a new solution that could provide better performance, lower operational overhead, and more cost-effective scaling for session management.\n\nProblems with Previous Solution:\n MongoDB session lookup latency averaging 150ms during peak traffic\n High memor...",
+      "diagramType": "Container",
+      "url": "adr-0009.html"
+    },
+    {
+      "number": "0010",
+      "title": "Adopt Hybrid Session Storage",
+      "status": "Accepted",
+      "content": " Adopt Hybrid Session Storage\n\n Status\n\nAccepted\n\n Context\n\nOur Redis-based session storage solution ([ADR-0009: Use Redis for Session Storage](0009-use-redis-for-session-storage.md)) has served us well, but as ShopFlow has grown globally, we've encountered new requirements that necessitate a more sophisticated approach to session management.\n\nThis represents the third iteration of our session storage architecture, building upon lessons learned from our original MongoDB implementation ([ADR-0008...",
+      "diagramType": "Component",
+      "url": "adr-0010.html"
+    },
+    {
+      "number": "0011",
+      "title": "Use Synchronous Service Calls",
+      "status": "Deprecated",
+      "content": " Use Synchronous Service Calls\n\n Status\n\nDeprecated\n\n Category\n\nCore Architecture\n\n Context\n\nIn the early stages of our microservices architecture implementation ([ADR-0003: Adopt Microservices Architecture](0003-adopt-microservices-architecture.md)), we needed to establish communication patterns between services. The most straightforward approach was to use synchronous HTTP calls for service-to-service communication.\n\nInitial Requirements:\n Simple request-response patterns for data retrieval\n I...",
+      "diagramType": "Component",
+      "url": "adr-0011.html"
+    }
+  ]
+}

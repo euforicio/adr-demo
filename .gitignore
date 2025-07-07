@@ -31,6 +31,9 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
+# LLMs
+.claude/*
+
 # dotenv environment variables file
 .env
 .env.local
