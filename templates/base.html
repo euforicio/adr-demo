@@ -8,6 +8,63 @@
     <meta name="description" content="Architecture Decision Records for modern software development">
     
     
+    <!-- Fallback styles for when CDN is blocked -->
+    <style>
+        /* Minimal fallback layout when external resources fail */
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+        .flex { display: flex; }
+        .min-h-screen { min-height: 100vh; }
+        .w-80 { width: 320px; }
+        .ml-80 { margin-left: 320px; }
+        .fixed { position: fixed; }
+        .h-screen { height: 100vh; }
+        .overflow-y-auto { overflow-y: auto; }
+        .flex-col { flex-direction: column; }
+        .z-50 { z-index: 50; }
+        .left-0 { left: 0; }
+        .top-0 { top: 0; }
+        .w-full { width: 100%; }
+        .p-4 { padding: 1rem; }
+        .p-8 { padding: 2rem; }
+        .border-b { border-bottom: 1px solid #e5e7eb; }
+        .bg-white { background-color: white; }
+        .text-gray-900 { color: #111827; }
+        .transition-colors { transition: color 0.3s; }
+        .hover\:text-blue-600:hover { color: #2563eb; }
+        .dark .bg-white { background-color: #1f2937; }
+        .dark .text-gray-900 { color: #f9fafb; }
+        .dark .border-b { border-bottom-color: #374151; }
+        
+        /* Ensure layout works even without external CSS */
+        aside.sidebar-glass {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 320px !important;
+            height: 100vh !important;
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        
+        main.main-glass {
+            margin-left: 320px !important;
+            width: calc(100% - 320px) !important;
+            min-height: 100vh !important;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .dark aside.sidebar-glass {
+            background: rgba(31, 41, 55, 0.95);
+            border-right-color: #374151;
+        }
+        
+        .dark main.main-glass {
+            background: rgba(17, 24, 39, 0.9);
+        }
+    </style>
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -218,7 +275,7 @@
 <body>
     <div class="flex min-h-screen transition-colors duration-300">
         <!-- Sidebar -->
-        <aside class="w-80 sidebar-glass glass-container flex flex-col fixed h-screen overflow-y-auto z-50">
+        <aside class="w-80 sidebar-glass glass-container flex flex-col fixed h-screen overflow-y-auto z-50 left-0 top-0">
             <div class="p-4 border-b border-gray-200/30 dark:border-gray-700/30 glass-container flex items-center justify-between">
                 <h1 class="text-lg font-semibold">
                     <a href="{{.BaseURL}}/" class="flex items-center gap-2 glass-text-primary hover:text-blue-300 transition-colors">
@@ -328,7 +385,7 @@
         </aside>
         
         <!-- Main Content -->
-        <main class="flex-1 ml-80 flex flex-col min-h-screen main-glass">
+        <main class="ml-80 w-full flex flex-col min-h-screen main-glass">
             <header class="glass-container border-b border-gray-200/30 dark:border-gray-700/30 px-8 py-6 sticky top-0 z-10 flex justify-between items-center">
                 <div class="flex items-center gap-2 text-sm">
                     <a href="{{.BaseURL}}/" class="glass-text-secondary hover:text-blue-300 transition-colors">Architecture Decisions</a>

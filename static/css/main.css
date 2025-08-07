@@ -72,6 +72,11 @@ aside.sidebar-glass {
     -webkit-backdrop-filter: var(--glass-backdrop);
     border-right: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 320px !important;
+    height: 100vh !important;
 }
 
 /* Main content glassmorphic styling */
@@ -79,6 +84,9 @@ main.main-glass {
     background: var(--glass-secondary);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    margin-left: 320px !important;
+    width: calc(100% - 320px) !important;
+    min-height: 100vh !important;
 }
 
 /* Card glassmorphic styling */
