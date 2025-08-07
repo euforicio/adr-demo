@@ -216,32 +216,32 @@
     </script>
 </head>
 <body>
-    <div class="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="flex min-h-screen transition-colors duration-300">
         <!-- Sidebar -->
-        <aside class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col fixed h-screen overflow-y-auto z-50">
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between">
+        <aside class="w-80 sidebar-glass glass-container flex flex-col fixed h-screen overflow-y-auto z-50">
+            <div class="p-4 border-b border-gray-200/30 dark:border-gray-700/30 glass-container flex items-center justify-between">
                 <h1 class="text-lg font-semibold">
-                    <a href="{{.BaseURL}}/" class="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <a href="{{.BaseURL}}/" class="flex items-center gap-2 glass-text-primary hover:text-blue-300 transition-colors">
                         <span class="text-lg">📋</span>
                         Architecture Decisions
                     </a>
                 </h1>
                 <!-- Theme Toggle -->
-                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle theme">
+                <button id="theme-toggle" class="glass-btn p-2 text-gray-700 dark:text-gray-200 hover:text-blue-300 transition-colors" title="Toggle theme">
                     <span class="dark:hidden">🌙</span>
                     <span class="hidden dark:inline">☀️</span>
                 </button>
             </div>
             
             <!-- Search -->
-            <div class="p-4 border-b border-gray-200 dark:border-gray-700 relative">
-                <input type="text" id="search-input" placeholder="Search ADRs..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <button id="search-clear" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-lg px-1">×</button>
+            <div class="p-4 border-b border-gray-200/30 dark:border-gray-700/30 relative">
+                <input type="text" id="search-input" placeholder="Search ADRs..." class="glass-input w-full px-3 py-2 glass-text-primary placeholder-gray-500/70 dark:placeholder-gray-400/70 text-sm focus:outline-none">
+                <button id="search-clear" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400/70 dark:text-gray-500/70 hover:text-gray-600 dark:hover:text-gray-300 text-lg px-1">×</button>
             </div>
             
             <!-- Filter and View Toggle -->
-            <div class="px-4 pb-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
-                <select id="status-filter" class="w-full px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <div class="px-4 pb-4 border-b border-gray-200/30 dark:border-gray-700/30 space-y-3">
+                <select id="status-filter" class="glass-input w-full px-2 py-2 glass-text-primary text-sm focus:outline-none">
                     <option value="">All Status</option>
                     <option value="Proposed">⏳ Proposed</option>
                     <option value="Accepted">✅ Accepted</option>
@@ -250,11 +250,11 @@
                 </select>
                 
                 <!-- View Toggle -->
-                <div class="flex rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
-                    <button id="view-grouped" class="flex-1 px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm" title="Group by category">
+                <div class="flex rounded-lg glass-secondary p-1">
+                    <button id="view-grouped" class="flex-1 px-3 py-1 text-xs font-medium rounded-md transition-colors glass-btn glass-text-primary shadow-sm" title="Group by category">
                         📁 Grouped
                     </button>
-                    <button id="view-flat" class="flex-1 px-3 py-1 text-xs font-medium rounded-md transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100" title="List by number">
+                    <button id="view-flat" class="flex-1 px-3 py-1 text-xs font-medium rounded-md transition-colors glass-text-secondary hover:text-gray-900 dark:hover:text-gray-100" title="List by number">
                         📄 List
                     </button>
                 </div>
@@ -266,21 +266,21 @@
                 <div id="adr-list-grouped">
                     {{$groups := groupByCategory .ADRs}}
                     {{range $category, $adrs := $groups}}
-                    <div class="border-b border-gray-100 dark:border-gray-700">
-                        <button class="adr-category-header w-full px-4 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" onclick="toggleCategory('category-{{$category | printf "%s" | printf "%x"}}')">
-                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">{{$category}}</span>
-                            <span class="category-icon text-xs text-gray-500 dark:text-gray-400">▼</span>
+                    <div class="border-b border-gray-100/30 dark:border-gray-700/30">
+                        <button class="adr-category-header w-full px-4 py-4 flex items-center justify-between text-left glass-nav-item transition-colors" onclick="toggleCategory('category-{{$category | printf "%s" | printf "%x"}}')">
+                            <span class="text-sm font-semibold glass-text-secondary uppercase tracking-wide">{{$category}}</span>
+                            <span class="category-icon text-xs glass-text-secondary">▼</span>
                         </button>
-                        <ul class="adr-category-list bg-gray-50 dark:bg-gray-800" id="category-{{$category | printf "%s" | printf "%x"}}">
+                        <ul class="adr-category-list glass-tertiary" id="category-{{$category | printf "%s" | printf "%x"}}">>
                             {{range $adrs}}
                             <li>
-                                <a href="{{$.BaseURL}}/adr-{{.Number}}.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                    <div class="w-5 h-5 rounded-full {{if eq .Status "Accepted"}}bg-green-500{{else if eq .Status "Proposed"}}bg-yellow-500{{else if eq .Status "Deprecated"}}bg-red-500{{else if eq .Status "Superseded"}}bg-purple-500{{else}}bg-gray-500{{end}} flex items-center justify-center flex-shrink-0">
+                                <a href="{{$.BaseURL}}/adr-{{.Number}}.html" class="flex items-center gap-3 px-4 py-3 glass-nav-item transition-colors">
+                                    <div class="w-5 h-5 rounded-full {{if eq .Status "Accepted"}}bg-green-500/80{{else if eq .Status "Proposed"}}bg-yellow-500/80{{else if eq .Status "Deprecated"}}bg-red-500/80{{else if eq .Status "Superseded"}}bg-purple-500/80{{else}}bg-gray-500/80{{end}} flex items-center justify-center flex-shrink-0 shadow-lg">
                                         <span class="text-white text-xs font-semibold">{{if eq .Status "Accepted"}}✓{{else if eq .Status "Proposed"}}●{{else if eq .Status "Deprecated"}}✗{{else if eq .Status "Superseded"}}↑{{else}}?{{end}}</span>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">{{.Title}}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-{{.Number}}</div>
+                                        <div class="text-sm font-medium glass-text-primary leading-5">{{.Title}}</div>
+                                        <div class="text-xs glass-text-secondary font-mono">ADR-{{.Number}}</div>
                                     </div>
                                 </a>
                             </li>
@@ -292,21 +292,21 @@
                 
                 <!-- Flat View (Hidden by default) -->
                 <div id="adr-list-flat" class="hidden">
-                    <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <ul class="divide-y divide-gray-200/30 dark:divide-gray-700/30">
                         {{range .ADRs}}
                         <li>
-                            <a href="{{$.BaseURL}}/adr-{{.Number}}.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                            <a href="{{$.BaseURL}}/adr-{{.Number}}.html" class="flex items-center gap-3 px-4 py-3 glass-nav-item transition-colors">
+                                <div class="w-8 h-8 rounded-lg glass-stats flex items-center justify-center flex-shrink-0">
                                     <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">{{.Number}}</span>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">{{.Title}}</div>
+                                    <div class="text-sm font-medium glass-text-primary leading-5">{{.Title}}</div>
                                     <div class="flex items-center gap-2 mt-1">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{if eq .Status "Accepted"}}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{{else if eq .Status "Proposed"}}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{{else if eq .Status "Deprecated"}}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{{else if eq .Status "Superseded"}}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200{{else}}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{{end}}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium glass-container {{if eq .Status "Accepted"}}text-green-800 dark:text-green-200{{else if eq .Status "Proposed"}}text-yellow-800 dark:text-yellow-200{{else if eq .Status "Deprecated"}}text-red-800 dark:text-red-200{{else if eq .Status "Superseded"}}text-purple-800 dark:text-purple-200{{else}}text-gray-800 dark:text-gray-200{{end}}">
                                             {{if eq .Status "Accepted"}}✓{{else if eq .Status "Proposed"}}●{{else if eq .Status "Deprecated"}}✗{{else if eq .Status "Superseded"}}↑{{else}}?{{end}} {{.Status}}
                                         </span>
                                         {{if ne .Category ""}}
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">• {{.Category}}</span>
+                                        <span class="text-xs glass-text-secondary">• {{.Category}}</span>
                                         {{end}}
                                     </div>
                                 </div>
@@ -318,20 +318,20 @@
             </nav>
             
             <!-- Footer -->
-            <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-center">
-                <a href="{{.BaseURL}}/docs" class="block w-full mb-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 text-center">
+            <div class="p-4 border-t border-gray-200/30 dark:border-gray-700/30 glass-container text-center">
+                <a href="{{.BaseURL}}/docs" class="block w-full mb-3 px-4 py-2 glass-btn glass-text-primary text-sm font-medium rounded-lg transition-all duration-200 text-center hover:bg-blue-600/20">
                     📖 Documentation
                 </a>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">ADR Demo</p>
-                <a href="https://github.com/euforicio/adr-demo" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">🔗 GitHub</a>
+                <p class="text-xs glass-text-secondary mb-2">ADR Demo</p>
+                <a href="https://github.com/euforicio/adr-demo" class="text-xs text-blue-300 hover:text-blue-200 hover:underline">🔗 GitHub</a>
             </div>
         </aside>
         
         <!-- Main Content -->
-        <main class="flex-1 ml-80 flex flex-col min-h-screen">
-            <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-6 sticky top-0 z-10 flex justify-between items-center">
+        <main class="flex-1 ml-80 flex flex-col min-h-screen main-glass">
+            <header class="glass-container border-b border-gray-200/30 dark:border-gray-700/30 px-8 py-6 sticky top-0 z-10 flex justify-between items-center">
                 <div class="flex items-center gap-2 text-sm">
-                    <a href="{{.BaseURL}}/" class="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Architecture Decisions</a>
+                    <a href="{{.BaseURL}}/" class="glass-text-secondary hover:text-blue-300 transition-colors">Architecture Decisions</a>
                     {{block "breadcrumb" .}}{{end}}
                 </div>
                 <div class="flex gap-2">
@@ -339,7 +339,7 @@
                 </div>
             </header>
             
-            <div class="flex-1 p-8 bg-white dark:bg-gray-900">
+            <div class="flex-1 p-8">
                 {{block "content" .}}{{end}}
             </div>
         </main>

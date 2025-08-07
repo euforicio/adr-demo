@@ -1,8 +1,206 @@
-/* ADR Generator - Using Tailwind Dark Mode */
+/* ADR Generator - Glassmorphic Design with Dark Mode */
+
+/* Glassmorphic Base Styles */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    --glass-backdrop: blur(4px);
+    --glass-border-radius: 16px;
+    
+    --glass-secondary: rgba(255, 255, 255, 0.15);
+    --glass-tertiary: rgba(255, 255, 255, 0.08);
+    
+    /* Gradient backgrounds */
+    --bg-gradient-light: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --bg-gradient-dark: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+    --bg-gradient-accent: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.dark {
+    --glass-bg: rgba(0, 0, 0, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --glass-secondary: rgba(255, 255, 255, 0.1);
+    --glass-tertiary: rgba(255, 255, 255, 0.05);
+}
+
+/* Body gradient background */
+body {
+    background: var(--bg-gradient-light);
+    background-attachment: fixed;
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+
+.dark body {
+    background: var(--bg-gradient-dark);
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Glassmorphic container base class */
+.glass-container {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border-radius: var(--glass-border-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.glass-secondary {
+    background: var(--glass-secondary);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.glass-tertiary {
+    background: var(--glass-tertiary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Sidebar glassmorphic styling */
+aside.sidebar-glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border-right: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* Main content glassmorphic styling */
+main.main-glass {
+    background: var(--glass-secondary);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Card glassmorphic styling */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border-radius: var(--glass-border-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    background: var(--glass-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+}
+
+.dark .glass-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Button glassmorphic styling */
+.glass-btn {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+}
+
+.glass-btn:hover {
+    background: var(--glass-secondary);
+    transform: translateY(-1px);
+}
+
+/* Input glassmorphic styling */
+.glass-input {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: inset 0 2px 8px 0 rgba(31, 38, 135, 0.2);
+}
+
+.dark .glass-input {
+    box-shadow: inset 0 2px 8px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-input:focus {
+    background: var(--glass-secondary);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 2px 8px 0 rgba(31, 38, 135, 0.3), 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+/* Navigation item glassmorphic styling */
+.glass-nav-item {
+    background: var(--glass-tertiary);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.glass-nav-item:hover {
+    background: var(--glass-secondary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hero section glassmorphic styling */
+.glass-hero {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 16px 64px 0 rgba(31, 38, 135, 0.4);
+}
+
+.dark .glass-hero {
+    box-shadow: 0 16px 64px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Stats cards glassmorphic styling */
+.glass-stats {
+    background: linear-gradient(135deg, var(--glass-bg), var(--glass-secondary));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* Enhanced text readability on glass backgrounds */
+.glass-text-primary {
+    color: rgba(0, 0, 0, 0.87);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass-text-primary {
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.glass-text-secondary {
+    color: rgba(0, 0, 0, 0.7);
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-text-secondary {
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
 
 /* Only essential styles that Tailwind cannot handle */
 
-/* Mermaid modal styles (complex modal positioning) */
+/* Mermaid modal styles (glassmorphic) */
 .mermaid-modal {
     position: fixed;
     top: 0;
@@ -15,12 +213,18 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .mermaid-modal-content {
     position: relative;
-    background: white;
-    border-radius: 0.75rem;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border-radius: var(--glass-border-radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     padding: 2rem;
     width: 95vw;
     height: 90vh;
@@ -73,7 +277,6 @@
 }
 
 .dark .mermaid-modal-content {
-    background: #1f2937;
     color: #f9fafb;
 }
 
@@ -81,8 +284,10 @@
     position: absolute;
     top: 1rem;
     right: 1rem;
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
     border-radius: 50%;
     width: 2rem;
     height: 2rem;
@@ -91,8 +296,9 @@
     justify-content: center;
     cursor: pointer;
     font-size: 1.25rem;
-    color: #111827;
+    color: var(--glass-text-primary);
     z-index: 10;
+    transition: all 0.3s ease;
 }
 
 .mermaid-zoom-controls {
@@ -105,8 +311,10 @@
 }
 
 .mermaid-zoom-btn {
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
     border-radius: 0.375rem;
     width: 2rem;
     height: 2rem;
@@ -115,37 +323,18 @@
     justify-content: center;
     cursor: pointer;
     font-size: 1rem;
-    color: #111827;
+    color: var(--glass-text-primary);
     transition: all 0.2s;
 }
 
 .mermaid-zoom-btn:hover {
-    background: #e5e7eb;
+    background: var(--glass-secondary);
     transform: translateY(-1px);
 }
 
-.dark .mermaid-modal-close {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
-}
-
 .mermaid-modal-close:hover {
-    background: #e5e7eb;
-}
-
-.dark .mermaid-modal-close:hover {
-    background: #4b5563;
-}
-
-.dark .mermaid-zoom-btn {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
-}
-
-.dark .mermaid-zoom-btn:hover {
-    background: #4b5563;
+    background: var(--glass-secondary);
+    transform: scale(1.1);
 }
 
 /* Mermaid diagram improvements */
@@ -252,6 +441,9 @@ ul.adr-category-list {
     transition: all 0.3s ease;
     overflow: hidden;
     max-height: 1000px; /* Large enough to show all content */
+    background: var(--glass-tertiary);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 ul.adr-category-list.collapsed {
