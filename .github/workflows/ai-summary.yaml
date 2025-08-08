@@ -1,4 +1,4 @@
-name: PR: Diff Review → Auto Summary (GitHub Models gpt-5-mini)
+name: PR Diff Review → Auto Summary (GitHub Models gpt-5-mini)
 
 on:
   pull_request:
