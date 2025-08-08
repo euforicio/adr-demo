@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -135,6 +136,9 @@ func (v *Validator) validateSequentialNumbering(filenames []string, result *Vali
 			numbers = append(numbers, num)
 		}
 	}
+
+	// Ensure numbers are in order before checking gaps
+	sort.Ints(numbers)
 
 	// Check for gaps in numbering
 	for i := 0; i < len(numbers)-1; i++ {
