@@ -1,37 +1,174 @@
-name: Run LLM Prompt with OpenAI
+name: PR: Diff Review → Auto Summary (GitHub Models gpt-5-mini)
+
 on:
   pull_request:
-    branches:
-      - main
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to summarize (optional; for manual runs)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+concurrency:
+  group: pr-auto-summary-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  evaluate-prompt:
+  summarize-and-update:
+    name: Generate summary from diff and update PR body
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) }}
+    env:
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+      # Limits to keep prompts safe & cheap
+      DIFF_MAX_CHARS: "180000"
+      COMMIT_MSG_LIMIT: "30"
+      FILE_LIST_LIMIT: "300"
+      # PR body markers
+      SUMMARY_START: "<!-- PR_SUMMARY:START -->"
+      SUMMARY_END: "<!-- PR_SUMMARY:END -->"
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
+      - name: Ensure gh and jq are available
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install openai
+          set -euo pipefail
+          gh --version
+          sudo apt-get update -y
+          sudo apt-get install -y jq
 
-      - name: Run LLM prompt
+      - name: Fetch PR metadata, files, commits, and full diff
+        shell: bash
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR: ${{ env.PR_NUMBER }}
         run: |
-          python -c "
-          from openai import OpenAI
-          client = OpenAI(api_key='$OPENAI_API_KEY')
-          response = client.chat.completions.create(
-            model='gpt-5-mini',
-            messages=[{'role': 'user', 'content': 'Write a summary of the changes in this pull request.'}]
-          )
-          print(response.choices[0].message.content)
-          "
+          set -euo pipefail
+          gh api repos/$REPO/pulls/$PR > pr.json
+          gh api repos/$REPO/pulls/$PR/files --paginate | jq -s 'add' > files.json
+          gh api repos/$REPO/pulls/$PR/commits --paginate | jq -s 'add' > commits.json
+          gh api -H "Accept: application/vnd.github.v3.diff" repos/$REPO/pulls/$PR > pr.diff
+
+      - name: Build prompt context (context.md)
+        shell: bash
+        env:
+          COMMIT_MSG_LIMIT: ${{ env.COMMIT_MSG_LIMIT }}
+          FILE_LIST_LIMIT: ${{ env.FILE_LIST_LIMIT }}
+          DIFF_MAX_CHARS: ${{ env.DIFF_MAX_CHARS }}
+        run: |
+          set -euo pipefail
+          TITLE=$(jq -r '.title' pr.json)
+          AUTHOR=$(jq -r '.user.login' pr.json)
+          FILE_COUNT=$(jq 'length' files.json)
+          ADDITIONS=$(jq '[.[].additions] | add // 0' files.json)
+          DELETIONS=$(jq '[.[].deletions] | add // 0' files.json)
+
+          {
+            echo "# PR: ${TITLE}"
+            echo "Author: @${AUTHOR}  •  Files changed: ${FILE_COUNT}  •  +${ADDITIONS} / -${DELETIONS}"
+            echo
+            echo "## Top commit messages"
+            jq -r '.[].commit.message' commits.json | awk -v N="$COMMIT_MSG_LIMIT" 'NR<=N {print "- " $0}'
+            echo
+            echo "## Changed files"
+            jq -r '.[] | "- \(.status)\t\(.filename) (+\(.additions) / -\(.deletions))"' files.json | awk -v N="$FILE_LIST_LIMIT" 'NR<=N'
+            echo
+            echo "## PR diff (truncated for budget)"
+            echo '```diff'
+            head -c "$DIFF_MAX_CHARS" pr.diff
+            echo
+            echo '```'
+          } > context.md
+
+      - name: Generate PR summary with GitHub Models (openai/gpt-5-mini)
+        id: summarize
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-5-mini
+          max-tokens: 1200
+          system-prompt: |
+            You are a Staff+ engineer producing executive-quality, reviewer-friendly PR summaries.
+            Rules:
+            - Ground everything ONLY in the provided PR diff and metadata; no speculation.
+            - Be concise, structured, and actionable; use bullets with strong verbs.
+            - Always call out risks, breaking changes, and security implications if present.
+            - If uncertain, write "(unclear)" rather than guessing.
+            Output format (use EXACT headings):
+            ### PR Summary (auto-generated)
+            **Intent**: One short sentence on the purpose of this change.
+
+            **Key Changes**
+            - Bulleted by module/area; each: what changed → why it matters.
+
+            **Impact**
+            - Performance: (n/a or succinct note)
+            - Security/Compliance: (n/a or succinct note)
+            - Breaking Changes: (n/a or list + migration note)
+
+            **Verification**
+            - Tests: (new/updated tests; how to run)
+            - Manual QA: (quick steps to validate)
+
+            **Migration/Follow-ups**
+            - (n/a or bullets: docs, flags, rollout, deprecations)
+
+            **Scope**
+            - Use the exact numbers from the context header: Files changed / +additions / -deletions  •  Risk: Low/Medium/High
+          prompt-file: context.md
+
+      - name: Assemble summary block
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${SUMMARY_START}" > summary_block.md
+          cat "${{ steps.summarize.outputs['response-file'] }}" >> summary_block.md
+          echo "" >> summary_block.md
+          echo "${SUMMARY_END}" >> summary_block.md
+          echo "---- Generated summary (first 60 lines) ----"
+          head -n 60 "${{ steps.summarize.outputs['response-file'] }}" || true
+
+      - name: Update PR description with generated summary
+        uses: actions/github-script@v7
+        env:
+          SUMMARY_START: ${{ env.SUMMARY_START }}
+          SUMMARY_END: ${{ env.SUMMARY_END }}
+        with:
+          script: |
+            const fs = require('fs');
+            const start = process.env.SUMMARY_START;
+            const end = process.env.SUMMARY_END;
+            const { owner, repo } = context.repo;
+            const pull_number = Number(process.env.PR_NUMBER || context.payload.pull_request?.number);
+            if (!pull_number) core.setFailed('Missing PR number');
+
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number });
+            const body = pr.body || '';
+            const block = fs.readFileSync('summary_block.md', 'utf8').replace(/\s+$/, '') + '\n';
+
+            let newBody;
+            const regex = new RegExp(`${start}[\\s\\S]*?${end}`);
+            if (body.includes(start) && body.includes(end)) {
+              newBody = body.replace(regex, block);
+            } else {
+              newBody = (body ? body + '\n\n' : '') + block;
+            }
+
+            await github.rest.pulls.update({ owner, repo, pull_number, body: newBody });
+            core.info('PR description updated with summary block.')
+
+      - name: Upload artifacts (summary + context)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-auto-summary
+          path: |
+            context.md
+            pr.json
+            files.json
+            commits.json
+            pr.diff
+            ${{ steps.summarize.outputs['response-file'] }}
