@@ -1,4 +1,4 @@
-name: PR Diff Review → Auto Summary (GitHub Models, latest inference API)
+name: "PR: Diff Review → Auto Summary (GitHub Models, latest inference API)"
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ permissions:
   models: read
 
 concurrency:
-  group: pr-auto-summary-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  group: "pr-auto-summary-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -44,9 +44,8 @@ jobs:
       PREFERRED_MODEL: "openai/gpt-5-mini"
       FALLBACK_MODELS: "openai/gpt-4o,openai/gpt-4.1"
 
-      # Inference API base + headers (latest syntax)
+      # Inference API base (latest syntax per docs)
       MODELS_BASE_URL: "https://models.github.ai"
-      API_VERSION: "2022-11-28"
 
     steps:
       - name: Preflight PR number
@@ -118,10 +117,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Get models catalog (latest syntax)
+          # Get models catalog (per docs)
           curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
                -H "Accept: application/vnd.github+json" \
-               -H "X-GitHub-Api-Version: ${API_VERSION}" \
                "$MODELS_BASE_URL/catalog/models" > models.json || echo "[]" > models.json
 
           choose_model () {
@@ -142,8 +140,7 @@ jobs:
           fi
 
           if [[ -z "$MODEL_ID" ]]; then
-            # Last resort default per docs examples
-            MODEL_ID="openai/gpt-4o"
+            MODEL_ID="openai/gpt-4o" # default example from docs
           fi
 
           echo "Using MODEL_ID=$MODEL_ID"
@@ -154,8 +151,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Build system prompt (kept short for token efficiency)
-          read -r -d '' SYS_PROMPT <<'EOF'
+          # Safer heredoc assignment for multi-line system prompt
+          SYS_PROMPT=$(cat <<'EOF'
 You are a Staff+ engineer producing executive-quality, reviewer-friendly PR summaries.
 - Ground everything ONLY in the provided PR diff and metadata; no speculation.
 - Be concise, structured, and actionable; use bullets with strong verbs.
@@ -183,8 +180,9 @@ Output format (use EXACT headings):
 **Scope**
 - Use the exact numbers from the context header: Files changed / +additions / -deletions  •  Risk: Low/Medium/High
 EOF
+)
 
-          # Create payload with latest chat/completions shape
+          # Build payload with latest chat/completions shape
           jq -n --arg model "$MODEL_ID" --arg sys "$SYS_PROMPT" --rawfile ctx context.md \
             '{
               model: $model,
@@ -196,35 +194,13 @@ EOF
               temperature: 0.2
             }' > payload.json
 
-          # Helper to call inference (latest syntax + headers)
-          call_inference () {
-            local payload_file="$1"
-            curl -sS -o response.json -w "%{http_code}" \
-              -H "Authorization: Bearer $GITHUB_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: ${API_VERSION}" \
-              -H "Content-Type: application/json" \
-              "${MODELS_BASE_URL}/inference/chat/completions" \
-              --data-binary @"${payload_file}"
-          }
-
-          HTTP_CODE=$(call_inference payload.json) || HTTP_CODE="000"
-          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
-            echo "First call failed (HTTP $HTTP_CODE). Response body:"
-            cat response.json || true
-
-            # If we failed with preferred model, try next fallback in catalog order
-            NEXT=""
-            IFS=',' read -ra CANDS <<< "$FALLBACK_MODELS"
-            for m in "${CANDS[@]}"; do
-              if [[ "$m" != "$MODEL_ID" ]]; then NEXT="$m"; break; fi
-            done
-            if [[ -n "$NEXT" ]]; then
-              echo "Retrying with fallback model: $NEXT"
-              jq --arg m "$NEXT" '.model = $m' payload.json > payload_fallback.json
-              HTTP_CODE=$(call_inference payload_fallback.json) || HTTP_CODE="000"
-            fi
-          fi
+          # Call inference (per docs: POST /inference/chat/completions)
+          HTTP_CODE=$(curl -sS -o response.json -w "%{http_code}" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            "$MODELS_BASE_URL/inference/chat/completions" \
+            --data-binary @payload.json) || HTTP_CODE="000"
 
           if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
             echo "❌ Model API call failed with HTTP $HTTP_CODE"
