@@ -95,7 +95,7 @@ jobs:
         id: summarize
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-5-mini
+          model: openai/gpt-5
           max-tokens: 1200
           system-prompt: |
             You are a Staff+ engineer producing executive-quality, reviewer-friendly PR summaries.
