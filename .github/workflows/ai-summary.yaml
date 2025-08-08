@@ -26,10 +26,16 @@ jobs:
     env:
       REPO: ${{ github.repository }}
       PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+
+      # 🔑 Auth: make gh CLI use the built-in token
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+
       # Limits to keep prompts safe & cheap
       DIFF_MAX_CHARS: "180000"
       COMMIT_MSG_LIMIT: "30"
       FILE_LIST_LIMIT: "300"
+
       # PR body markers
       SUMMARY_START: "<!-- PR_SUMMARY:START -->"
       SUMMARY_END: "<!-- PR_SUMMARY:END -->"
@@ -129,8 +135,6 @@ jobs:
           cat "${{ steps.summarize.outputs['response-file'] }}" >> summary_block.md
           echo "" >> summary_block.md
           echo "${SUMMARY_END}" >> summary_block.md
-          echo "---- Generated summary (first 60 lines) ----"
-          head -n 60 "${{ steps.summarize.outputs['response-file'] }}" || true
 
       - name: Update PR description with generated summary
         uses: actions/github-script@v7
