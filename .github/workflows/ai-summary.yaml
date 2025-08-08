@@ -1,4 +1,4 @@
-name: PR Diff Review → Auto Summary (GitHub Models gpt-5-mini)
+name: PR Diff Review → Auto Summary (GitHub Models, latest inference API)
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
       REPO: ${{ github.repository }}
       PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
 
-      # 🔑 Auth: make gh CLI use the built-in token
+      # Auth for gh + model API
       GH_TOKEN: ${{ github.token }}
       GITHUB_TOKEN: ${{ github.token }}
 
@@ -40,14 +40,37 @@ jobs:
       SUMMARY_START: "<!-- PR_SUMMARY:START -->"
       SUMMARY_END: "<!-- PR_SUMMARY:END -->"
 
+      # Preferred/backup models (resolved via catalog)
+      PREFERRED_MODEL: "openai/gpt-5-mini"
+      FALLBACK_MODELS: "openai/gpt-4o,openai/gpt-4.1"
+
+      # Inference API base + headers (latest syntax)
+      MODELS_BASE_URL: "https://models.github.ai"
+      API_VERSION: "2022-11-28"
+
     steps:
-      - name: Ensure gh and jq are available
+      - name: Preflight PR number
         shell: bash
         run: |
           set -euo pipefail
-          gh --version
+          if [[ -z "${PR_NUMBER:-}" ]]; then
+            PR_GUESS=$(gh pr view --json number -q .number || true)
+            if [[ -n "$PR_GUESS" ]]; then
+              echo "PR_NUMBER=$PR_GUESS" >> "$GITHUB_ENV"
+              echo "Using inferred PR number: $PR_GUESS"
+            else
+              echo "❌ PR number not provided and could not infer." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Install deps
+        shell: bash
+        run: |
+          set -euo pipefail
           sudo apt-get update -y
           sudo apt-get install -y jq
+          gh --version || true
 
       - name: Fetch PR metadata, files, commits, and full diff
         shell: bash
@@ -91,48 +114,135 @@ jobs:
             echo '```'
           } > context.md
 
-      - name: Generate PR summary with GitHub Models (openai/gpt-5-mini)
-        id: summarize
-        uses: actions/ai-inference@v1
-        with:
-          model: openai/gpt-5
-          max-tokens: 1200
-          system-prompt: |
-            You are a Staff+ engineer producing executive-quality, reviewer-friendly PR summaries.
-            Rules:
-            - Ground everything ONLY in the provided PR diff and metadata; no speculation.
-            - Be concise, structured, and actionable; use bullets with strong verbs.
-            - Always call out risks, breaking changes, and security implications if present.
-            - If uncertain, write "(unclear)" rather than guessing.
-            Output format (use EXACT headings):
-            ### PR Summary (auto-generated)
-            **Intent**: One short sentence on the purpose of this change.
+      - name: Resolve model from Catalog (prefer gpt-5-mini → fallbacks)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Get models catalog (latest syntax)
+          curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               -H "X-GitHub-Api-Version: ${API_VERSION}" \
+               "$MODELS_BASE_URL/catalog/models" > models.json || echo "[]" > models.json
 
-            **Key Changes**
-            - Bulleted by module/area; each: what changed → why it matters.
+          choose_model () {
+            local want="$1"
+            jq -r '.[].id' models.json | grep -Fxq "$want"
+          }
 
-            **Impact**
-            - Performance: (n/a or succinct note)
-            - Security/Compliance: (n/a or succinct note)
-            - Breaking Changes: (n/a or list + migration note)
+          MODEL_ID=""
+          if choose_model "$PREFERRED_MODEL"; then
+            MODEL_ID="$PREFERRED_MODEL"
+          else
+            IFS=',' read -ra CANDS <<< "$FALLBACK_MODELS"
+            for m in "${CANDS[@]}"; do
+              if choose_model "$m"; then
+                MODEL_ID="$m"; break
+              fi
+            done
+          fi
 
-            **Verification**
-            - Tests: (new/updated tests; how to run)
-            - Manual QA: (quick steps to validate)
+          if [[ -z "$MODEL_ID" ]]; then
+            # Last resort default per docs examples
+            MODEL_ID="openai/gpt-4o"
+          fi
 
-            **Migration/Follow-ups**
-            - (n/a or bullets: docs, flags, rollout, deprecations)
+          echo "Using MODEL_ID=$MODEL_ID"
+          echo "MODEL_ID=$MODEL_ID" >> "$GITHUB_ENV"
 
-            **Scope**
-            - Use the exact numbers from the context header: Files changed / +additions / -deletions  •  Risk: Low/Medium/High
-          prompt-file: context.md
+      - name: Generate PR summary via GitHub Models (latest inference API)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Build system prompt (kept short for token efficiency)
+          read -r -d '' SYS_PROMPT <<'EOF'
+You are a Staff+ engineer producing executive-quality, reviewer-friendly PR summaries.
+- Ground everything ONLY in the provided PR diff and metadata; no speculation.
+- Be concise, structured, and actionable; use bullets with strong verbs.
+- Call out risks, breaking changes, and security implications if present.
+- If uncertain, write "(unclear)" rather than guessing.
+Output format (use EXACT headings):
+### PR Summary (auto-generated)
+**Intent**: One short sentence on the purpose of this change.
+
+**Key Changes**
+- Bulleted by module/area; each: what changed → why it matters.
+
+**Impact**
+- Performance: (n/a or succinct note)
+- Security/Compliance: (n/a or succinct note)
+- Breaking Changes: (n/a or list + migration note)
+
+**Verification**
+- Tests: (new/updated tests; how to run)
+- Manual QA: (quick steps to validate)
+
+**Migration/Follow-ups**
+- (n/a or bullets: docs, flags, rollout, deprecations)
+
+**Scope**
+- Use the exact numbers from the context header: Files changed / +additions / -deletions  •  Risk: Low/Medium/High
+EOF
+
+          # Create payload with latest chat/completions shape
+          jq -n --arg model "$MODEL_ID" --arg sys "$SYS_PROMPT" --rawfile ctx context.md \
+            '{
+              model: $model,
+              messages: [
+                { "role": "system", "content": $sys },
+                { "role": "user",   "content": $ctx }
+              ],
+              max_tokens: 1200,
+              temperature: 0.2
+            }' > payload.json
+
+          # Helper to call inference (latest syntax + headers)
+          call_inference () {
+            local payload_file="$1"
+            curl -sS -o response.json -w "%{http_code}" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: ${API_VERSION}" \
+              -H "Content-Type: application/json" \
+              "${MODELS_BASE_URL}/inference/chat/completions" \
+              --data-binary @"${payload_file}"
+          }
+
+          HTTP_CODE=$(call_inference payload.json) || HTTP_CODE="000"
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "First call failed (HTTP $HTTP_CODE). Response body:"
+            cat response.json || true
+
+            # If we failed with preferred model, try next fallback in catalog order
+            NEXT=""
+            IFS=',' read -ra CANDS <<< "$FALLBACK_MODELS"
+            for m in "${CANDS[@]}"; do
+              if [[ "$m" != "$MODEL_ID" ]]; then NEXT="$m"; break; fi
+            done
+            if [[ -n "$NEXT" ]]; then
+              echo "Retrying with fallback model: $NEXT"
+              jq --arg m "$NEXT" '.model = $m' payload.json > payload_fallback.json
+              HTTP_CODE=$(call_inference payload_fallback.json) || HTTP_CODE="000"
+            fi
+          fi
+
+          if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+            echo "❌ Model API call failed with HTTP $HTTP_CODE"
+            echo "Response body follows:"
+            cat response.json || true
+            exit 1
+          fi
+
+          jq -r '.choices[0].message.content // ""' response.json > summary.md
+          echo "---- Summary (first 60 lines) ----"
+          head -n 60 summary.md || true
 
       - name: Assemble summary block
         shell: bash
         run: |
           set -euo pipefail
           echo "${SUMMARY_START}" > summary_block.md
-          cat "${{ steps.summarize.outputs['response-file'] }}" >> summary_block.md
+          cat summary.md >> summary_block.md
           echo "" >> summary_block.md
           echo "${SUMMARY_END}" >> summary_block.md
 
@@ -175,4 +285,6 @@ jobs:
             files.json
             commits.json
             pr.diff
-            ${{ steps.summarize.outputs['response-file'] }}
+            payload.json
+            response.json
+            summary.md
