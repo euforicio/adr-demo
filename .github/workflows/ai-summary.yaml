@@ -63,40 +63,29 @@ jobs:
             core.setOutput('commit_messages', commitMessages);
             core.setOutput('pr_number', context.issue.number);
       
+      - name: Create temp files for PR summary
+        run: |
+          echo '${{ steps.pr-info.outputs.title }}' > /tmp/pr_title.txt
+          echo '${{ steps.pr-info.outputs.body }}' > /tmp/pr_body.txt
+          echo '${{ steps.pr-info.outputs.base_branch }}' > /tmp/base_branch.txt
+          echo '${{ steps.pr-info.outputs.head_branch }}' > /tmp/head_branch.txt
+          echo '${{ steps.pr-info.outputs.file_changes }}' > /tmp/file_changes.txt
+          echo '${{ steps.pr-info.outputs.commit_messages }}' > /tmp/commit_messages.txt
+      
       - name: Generate PR Summary with AI
         id: ai-summary
         uses: actions/ai-inference@v1.2.8
         with:
-          model: openai/gpt-4o-mini  # You can change to other models like mistral-ai/ministral-3b
+          prompt-file: './.github/prompts/pr-summary.prompt.yml'
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
-          system-prompt: |
-            You are an expert code reviewer and technical writer. Your task is to create clear, 
-            concise summaries of pull requests that help reviewers understand the changes quickly.
-            
-            Format your response as follows:
-            1. Start with a brief overview (1-2 sentences)
-            2. List key changes as bullet points (max 5 most important)
-            3. Note any potential impacts or considerations
-            4. Keep the entire summary under 300 words
-            
-            Use clear, professional language and focus on the "what" and "why" of the changes.
-          prompt: |
-            Please summarize this pull request:
-            
-            **Title:** ${{ steps.pr-info.outputs.title }}
-            
-            **Description:** ${{ steps.pr-info.outputs.body }}
-            
-            **Target Branch:** ${{ steps.pr-info.outputs.base_branch }}
-            **Source Branch:** ${{ steps.pr-info.outputs.head_branch }}
-            
-            **Files Changed:**
-            ${{ steps.pr-info.outputs.file_changes }}
-            
-            **Commit Messages:**
-            ${{ steps.pr-info.outputs.commit_messages }}
+          file_input: |
+            pr_title: /tmp/pr_title.txt
+            pr_body: /tmp/pr_body.txt
+            base_branch: /tmp/base_branch.txt
+            head_branch: /tmp/head_branch.txt
+            file_changes: /tmp/file_changes.txt
+            commit_messages: /tmp/commit_messages.txt
       
       - name: Update PR Description
         uses: actions/github-script@v7

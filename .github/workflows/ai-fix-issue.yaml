@@ -80,6 +80,7 @@ jobs:
         with:
           prompt-file: './.github/prompts/analyze-issue.prompt.yml'
           enable-github-mcp: true
+          token: ${{ secrets.GITHUB_TOKEN }}
           input: |
             has_package_json: ${{ steps.repo-structure.outputs.has_package_json }}
             has_requirements: ${{ steps.repo-structure.outputs.has_requirements }}
@@ -138,6 +139,7 @@ jobs:
           prompt-file: './.github/prompts/generate-code.prompt.yml'
           max-tokens: 4000
           enable-github-mcp: true
+          token: ${{ secrets.GITHUB_TOKEN }}
           file_input: |
             issue_title: /tmp/issue_title2.txt
             issue_body: /tmp/issue_body2.txt
