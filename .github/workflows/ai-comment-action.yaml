@@ -297,7 +297,7 @@ jobs:
               - [ ] Edge cases handled appropriately
               
               ### 💬 Need changes?
-              Mention +hank in a comment with your requested changes and I'll update this PR!
+              Mention @hank_bot in a comment with your requested changes and I'll update this PR!
               
               Closes #${process.env.ISSUE_NUMBER}
               
@@ -358,12 +358,12 @@ jobs:
               If the problem persists, this issue may require manual implementation.`
             });
 
-  # New job for updating PR when +hank is mentioned
+  # New job for updating PR when @hank_bot is mentioned
   update-pr-on-mention:
     if: |
       github.event_name == 'issue_comment' && 
       github.event.issue.pull_request && 
-      contains(github.event.comment.body, '+hank')
+      contains(github.event.comment.body, '@hank_bot')
     runs-on: ubuntu-latest
     
     steps:
@@ -403,10 +403,10 @@ jobs:
             core.setOutput('pr_number', context.issue.number);
             core.setOutput('pr_title', pr.data.title);
             
-            // Get the comment that mentioned +hank
+            // Get the comment that mentioned @hank_bot
             const comment = context.payload.comment.body;
-            // Remove the +hank mention and clean up the text
-            const instruction = comment.replace(/+hank/gi, '').trim();
+            // Remove the @hank_bot mention and clean up the text
+            const instruction = comment.replace(/@hank_bot/gi, '').trim();
             core.setOutput('instruction', instruction);
             core.setOutput('comment_author', context.payload.comment.user.login);
       
@@ -647,7 +647,7 @@ jobs:
             git add -A
             
             # Create a descriptive commit message
-            COMMIT_MSG="AI Update: Responding to +hank mention
+            COMMIT_MSG="AI Update: Responding to @hank_bot mention
           
           Request: ${INSTRUCTION:0:200}
           
@@ -681,7 +681,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: parseInt(process.env.PR_NUMBER),
-              body: `🤖 **+hank Update Complete**
+              body: `🤖 **@hank_bot Update Complete**
               
               Hey @${process.env.COMMENT_AUTHOR}, I've updated the PR based on your request!
               
@@ -691,7 +691,7 @@ jobs:
               ### 🔄 What's Next?
               - Review the updated changes
               - Run tests to ensure everything works
-              - Request more changes by mentioning +hank again if needed
+              - Request more changes by mentioning @hank_bot again if needed
               
               ---
               *Powered by GitHub Models AI*`
@@ -709,7 +709,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: parseInt(process.env.PR_NUMBER),
-              body: `🤖 **+hank Response**
+              body: `🤖 **@hank_bot Response**
               
               Hey @${process.env.COMMENT_AUTHOR}, I processed your request but didn't find any changes to make.
               
@@ -718,7 +718,7 @@ jobs:
               - The instruction wasn't specific enough
               - The changes conflict with the existing code structure
               
-              Please provide more specific instructions and mention +hank again!
+              Please provide more specific instructions and mention @hank_bot again!
               
               ---
               *Powered by GitHub Models AI*`
@@ -744,7 +744,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: parseInt(process.env.PR_NUMBER),
-              body: `❌ **+hank Update Failed**
+              body: `❌ **@hank_bot Update Failed**
               
               Hey @${process.env.COMMENT_AUTHOR}, I encountered an error while trying to update the PR.
               
@@ -758,7 +758,7 @@ jobs:
               - Break down complex requests into smaller parts
               - Check if the files you want to modify exist in the PR
               
-              You can try again by mentioning +hank with a clearer instruction!
+              You can try again by mentioning @hank_bot with a clearer instruction!
               
               ---
               *Powered by GitHub Models AI*`
