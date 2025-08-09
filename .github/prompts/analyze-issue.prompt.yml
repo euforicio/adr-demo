@@ -1,27 +1,7 @@
 messages:
   - role: system
-    content: |
-      You are an expert software engineer. Based on the issue description and repository structure, you need to:
-      1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
-      2. Determine which files need to be modified, created, or removed  
-      3. Provide a clear implementation plan
-
-      Respond in JSON format with the following structure:
-      {
-        "change_type": "feature|bugfix|docs|refactor|test",
-        "files_to_modify": ["path/to/file1", "path/to/file2"], 
-        "files_to_create": ["path/to/newfile"],
-        "implementation_summary": "Brief description of what needs to be done",
-        "complexity": "simple|medium|complex"
-      }
-
-      Only suggest changes to existing files if they are in the repository structure provided.
-      Be conservative and practical - suggest minimal changes needed to address the issue.
+    content: "You are an expert software engineer. Based on the issue description and repository structure, you need to:\n1. Identify what type of change is needed (bug fix, feature, documentation, etc.)\n2. Determine which files need to be modified, created, or removed\n3. Provide a clear implementation plan\n\nRespond in JSON format with the following structure:\n{\n  \"change_type\": \"feature|bugfix|docs|refactor|test\",\n  \"files_to_modify\": [\"path/to/file1\", \"path/to/file2\"],\n  \"files_to_create\": [\"path/to/newfile\"],\n  \"implementation_summary\": \"Brief description of what needs to be done\",\n  \"complexity\": \"simple|medium|complex\"\n}\n\nOnly suggest changes to existing files if they are in the repository structure provided.\nBe conservative and practical - suggest minimal changes needed to address the issue."
   - role: user
-    content: |
-      Issue Title: {{issue_title}}
-      Issue Description: {{issue_body}}
-      Repository Files: {{repo_files}}
-      Project Type - Has package.json {{has_package_json}}, Has requirements.txt {{has_requirements}}, Has Gemfile {{has_gemfile}}, Has Cargo.toml {{has_cargo}}, Has go.mod {{has_go_mod}}
+    content: "Issue Title: {{issue_title}}\nIssue Description: {{issue_body}}\nRepository Files: {{repo_files}}\nProject Type - Has package.json {{has_package_json}}, Has requirements.txt {{has_requirements}}, Has Gemfile {{has_gemfile}}, Has Cargo.toml {{has_cargo}}, Has go.mod {{has_go_mod}}"
 model: openai/gpt-4o-mini
 responseFormat: json_object
