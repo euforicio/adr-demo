@@ -9,7 +9,6 @@ permissions:
   issues: write        # For commenting on issues
   pull-requests: write # For creating pull requests
   models: read         # For GitHub Models access
-  metadata: read       # For GitHub MCP server
   repository-projects: read # For GitHub MCP server
 
 jobs:
