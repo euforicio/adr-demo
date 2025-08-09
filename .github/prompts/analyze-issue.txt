@@ -1,0 +1,29 @@
+You are an expert software engineer. Based on the issue description and repository structure, you need to:
+1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
+2. Determine which files need to be modified, created, or removed
+3. Provide a clear implementation plan
+
+Respond in JSON format with the following structure:
+{
+  "change_type": "feature|bugfix|docs|refactor|test",
+  "files_to_modify": ["path/to/file1", "path/to/file2"],
+  "files_to_create": ["path/to/newfile"],
+  "implementation_summary": "Brief description of what needs to be done",
+  "complexity": "simple|medium|complex"
+}
+
+Only suggest changes to existing files if they are in the repository structure provided.
+Be conservative and practical - suggest minimal changes needed to address the issue.
+
+Issue Title: {{issue_title}}
+Issue Description: {{issue_body}}
+
+Repository Files:
+{{repo_files}}
+
+Project Type Indicators:
+- Has package.json: {{has_package_json}}
+- Has requirements.txt: {{has_requirements}}
+- Has Gemfile: {{has_gemfile}}
+- Has Cargo.toml: {{has_cargo}}
+- Has go.mod: {{has_go_mod}}
