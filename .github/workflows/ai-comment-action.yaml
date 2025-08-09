@@ -1,0 +1,711 @@
+name: AI PR Generator and Updater
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write      # For creating branches and commits
+  issues: write        # For commenting on issues
+  pull-requests: write # For creating pull requests
+  models: read         # For GitHub Models access
+
+jobs:
+  # Original job for generating PR from issues
+  generate-pr:
+    if: github.event_name == 'issues' && github.event.label.name == 'assign:ai'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Git Configuration
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Get Issue Details
+        id: issue-details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            core.setOutput('title', issue.data.title);
+            core.setOutput('body', issue.data.body || 'No description provided');
+            core.setOutput('number', context.issue.number);
+            core.setOutput('author', issue.data.user.login);
+      
+      - name: Analyze Repository Structure
+        id: repo-structure
+        run: |
+          # Get list of files in the repository (excluding .git and node_modules)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          find . -type f -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" \
+                 -o -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rs" \
+                 -o -name "*.cpp" -o -name "*.c" -o -name "*.cs" -o -name "*.rb" \
+                 -o -name "*.php" -o -name "*.swift" -o -name "*.kt" -o -name "*.md" \
+                 -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" -o -name "*.xml" \
+                 -o -name "*.html" -o -name "*.css" -o -name "*.scss" 2>/dev/null \
+                 | grep -v node_modules | grep -v .git | head -50 >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Check for common config files
+          echo "has_package_json=$([[ -f package.json ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_requirements=$([[ -f requirements.txt ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_gemfile=$([[ -f Gemfile ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_cargo=$([[ -f Cargo.toml ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+          echo "has_go_mod=$([[ -f go.mod ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+      
+      - name: Analyze Issue and Generate Implementation Plan
+        id: analyze-issue
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: |
+            You are an expert software engineer tasked with analyzing issues and determining the implementation approach.
+            Based on the issue description and repository structure, you need to:
+            1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
+            2. Determine which files need to be modified or created
+            3. Provide a clear implementation plan
+            
+            Respond in JSON format with the following structure:
+            {
+              "change_type": "feature|bugfix|docs|refactor|test",
+              "files_to_modify": ["path/to/file1", "path/to/file2"],
+              "files_to_create": ["path/to/newfile"],
+              "implementation_summary": "Brief description of what needs to be done",
+              "complexity": "simple|medium|complex"
+            }
+            
+            Only suggest changes to existing files if they are in the repository structure provided.
+            Be conservative and practical - suggest minimal changes needed to address the issue.
+          prompt: |
+            Issue Title: ${{ steps.issue-details.outputs.title }}
+            Issue Description: ${{ steps.issue-details.outputs.body }}
+            
+            Repository Files:
+            ${{ steps.repo-structure.outputs.files }}
+            
+            Project Type Indicators:
+            - Has package.json: ${{ steps.repo-structure.outputs.has_package_json }}
+            - Has requirements.txt: ${{ steps.repo-structure.outputs.has_requirements }}
+            - Has Gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
+            - Has Cargo.toml: ${{ steps.repo-structure.outputs.has_cargo }}
+            - Has go.mod: ${{ steps.repo-structure.outputs.has_go_mod }}
+      
+      - name: Parse Implementation Plan
+        id: parse-plan
+        uses: actions/github-script@v7
+        env:
+          AI_RESPONSE: ${{ steps.analyze-issue.outputs.response }}
+        with:
+          script: |
+            let plan;
+            try {
+              // Try to parse the AI response as JSON
+              const response = process.env.AI_RESPONSE;
+              // Remove any markdown code blocks if present
+              const jsonStr = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+              plan = JSON.parse(jsonStr);
+            } catch (e) {
+              console.error('Failed to parse AI response:', e);
+              // Fallback plan if parsing fails
+              plan = {
+                change_type: 'feature',
+                files_to_modify: [],
+                files_to_create: ['README_AI_IMPLEMENTATION.md'],
+                implementation_summary: 'Unable to parse specific implementation details',
+                complexity: 'simple'
+              };
+            }
+            
+            core.setOutput('change_type', plan.change_type);
+            core.setOutput('files_to_modify', JSON.stringify(plan.files_to_modify));
+            core.setOutput('files_to_create', JSON.stringify(plan.files_to_create));
+            core.setOutput('implementation_summary', plan.implementation_summary);
+            core.setOutput('complexity', plan.complexity);
+      
+      - name: Generate Code Changes
+        id: generate-code
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 4000
+          system-prompt: |
+            You are an expert software engineer. Generate high-quality, production-ready code based on the requirements.
+            Follow these guidelines:
+            1. Write clean, well-commented code
+            2. Follow best practices for the language/framework
+            3. Include error handling where appropriate
+            4. Make code that is maintainable and testable
+            5. If creating multiple files, separate them with "--- FILE: path/to/file ---"
+            6. Only output the code content, no explanations
+            
+            For modifications to existing files, show the complete updated file content.
+          prompt: |
+            Issue Title: ${{ steps.issue-details.outputs.title }}
+            Issue Description: ${{ steps.issue-details.outputs.body }}
+            
+            Implementation Plan: ${{ steps.parse-plan.outputs.implementation_summary }}
+            Files to modify: ${{ steps.parse-plan.outputs.files_to_modify }}
+            Files to create: ${{ steps.parse-plan.outputs.files_to_create }}
+            
+            Generate the necessary code changes to implement this issue.
+      
+      - name: Create Branch and Apply Changes
+        id: create-branch
+        env:
+          CODE_CHANGES: ${{ steps.generate-code.outputs.response }}
+          FILES_TO_CREATE: ${{ steps.parse-plan.outputs.files_to_create }}
+          FILES_TO_MODIFY: ${{ steps.parse-plan.outputs.files_to_modify }}
+          ISSUE_NUMBER: ${{ steps.issue-details.outputs.number }}
+        run: |
+          # Create a new branch
+          BRANCH_NAME="ai-generated/issue-${ISSUE_NUMBER}-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
+          # Process the generated code
+          cat > process_changes.py << 'PYTHON_SCRIPT'
+          import os
+          import json
+          import re
+          
+          code_changes = os.environ.get('CODE_CHANGES', '')
+          files_to_create = json.loads(os.environ.get('FILES_TO_CREATE', '[]'))
+          files_to_modify = json.loads(os.environ.get('FILES_TO_MODIFY', '[]'))
+          
+          # Split code by file markers
+          file_pattern = r'--- FILE: (.*?) ---'
+          parts = re.split(file_pattern, code_changes)
+          
+          # Process files
+          if len(parts) > 1:
+              # Multiple files specified in the output
+              for i in range(1, len(parts), 2):
+                  if i < len(parts) - 1:
+                      filepath = parts[i].strip()
+                      content = parts[i + 1].strip()
+                      
+                      # Create directory if needed
+                      os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+                      
+                      # Write file
+                      with open(filepath, 'w') as f:
+                          f.write(content)
+                      print(f"Created/Modified: {filepath}")
+          else:
+              # Single file or fallback
+              if files_to_create:
+                  filepath = files_to_create[0]
+              elif files_to_modify:
+                  filepath = files_to_modify[0]
+              else:
+                  filepath = "AI_IMPLEMENTATION.md"
+              
+              # Create directory if needed
+              os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+              
+              # Write the content
+              with open(filepath, 'w') as f:
+                  f.write(code_changes)
+              print(f"Created/Modified: {filepath}")
+          PYTHON_SCRIPT
+          
+          python3 process_changes.py
+          
+          # Add and commit changes
+          git add -A
+          git commit -m "AI Generated: Implementation for issue #${ISSUE_NUMBER}
+          
+          Generated by GitHub Models AI based on the issue description.
+          This is an automated implementation that should be reviewed before merging."
+          
+          # Push the branch
+          git push origin "$BRANCH_NAME"
+      
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        env:
+          BRANCH_NAME: ${{ steps.create-branch.outputs.branch_name }}
+          ISSUE_NUMBER: ${{ steps.issue-details.outputs.number }}
+          ISSUE_TITLE: ${{ steps.issue-details.outputs.title }}
+          ISSUE_AUTHOR: ${{ steps.issue-details.outputs.author }}
+          IMPLEMENTATION_SUMMARY: ${{ steps.parse-plan.outputs.implementation_summary }}
+          CHANGE_TYPE: ${{ steps.parse-plan.outputs.change_type }}
+        with:
+          script: |
+            const prCreated = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[AI Generated] ${process.env.ISSUE_TITLE}`,
+              body: `## 🤖 AI Generated Pull Request
+              
+              This PR was automatically generated by GitHub Models AI in response to issue #${process.env.ISSUE_NUMBER}.
+              
+              ### 📋 Issue Summary
+              **Original Issue:** #${process.env.ISSUE_NUMBER}
+              **Requested by:** @${process.env.ISSUE_AUTHOR}
+              **Change Type:** ${process.env.CHANGE_TYPE}
+              
+              ### 🎯 Implementation Summary
+              ${process.env.IMPLEMENTATION_SUMMARY}
+              
+              ### ⚠️ Important Notes
+              - This is an AI-generated implementation and requires thorough review
+              - The code may need adjustments to match your specific requirements
+              - Please test all changes before merging
+              - Consider security implications and best practices
+              
+              ### 🔍 Review Checklist
+              - [ ] Code follows project conventions
+              - [ ] No security vulnerabilities introduced
+              - [ ] Tests pass (if applicable)
+              - [ ] Documentation updated (if needed)
+              - [ ] Edge cases handled appropriately
+              
+              ### 💬 Need changes?
+              Mention @hank in a comment with your requested changes and I'll update this PR!
+              
+              Closes #${process.env.ISSUE_NUMBER}
+              
+              ---
+              *Generated by GitHub Models AI Assistant*`,
+              head: process.env.BRANCH_NAME,
+              base: context.payload.repository.default_branch
+            });
+            
+            // Add labels to the PR
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prCreated.data.number,
+              labels: ['ai-generated', 'needs-review']
+            });
+            
+            // Comment on the original issue
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(process.env.ISSUE_NUMBER),
+              body: `🤖 **AI Assistant Update**
+              
+              I've created PR #${prCreated.data.number} to address this issue.
+              
+              The implementation has been generated based on your requirements. Please review the PR carefully as AI-generated code may need adjustments.
+              
+              [View Pull Request →](${prCreated.data.html_url})`
+            });
+            
+            console.log(`Created PR #${prCreated.data.number}`);
+      
+      - name: Handle Errors
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.issue-details.outputs.number }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(process.env.ISSUE_NUMBER),
+              body: `❌ **AI Assistant Error**
+              
+              I encountered an error while trying to generate a PR for this issue. This could be due to:
+              
+              - Complex requirements that need human interpretation
+              - Repository structure that couldn't be analyzed properly
+              - API limitations or timeout issues
+              
+              Please try:
+              1. Making the issue description more specific
+              2. Breaking down complex requests into smaller issues
+              3. Removing the label and trying again
+              
+              If the problem persists, this issue may require manual implementation.`
+            });
+
+  # New job for updating PR when @hank is mentioned
+  update-pr-on-mention:
+    if: |
+      github.event_name == 'issue_comment' && 
+      github.event.issue.pull_request && 
+      contains(github.event.comment.body, '@hank')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: React to Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Add a reaction to acknowledge the comment
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes'
+            });
+      
+      - name: Get PR Details
+        id: pr-details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get the PR details
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            // Check if this is an AI-generated PR
+            const labels = pr.data.labels.map(l => l.name);
+            if (!labels.includes('ai-generated')) {
+              core.setFailed('This is not an AI-generated PR');
+              return;
+            }
+            
+            core.setOutput('branch', pr.data.head.ref);
+            core.setOutput('base_branch', pr.data.base.ref);
+            core.setOutput('pr_number', context.issue.number);
+            core.setOutput('pr_title', pr.data.title);
+            
+            // Get the comment that mentioned @hank
+            const comment = context.payload.comment.body;
+            // Remove the @hank mention and clean up the text
+            const instruction = comment.replace(/@hank/gi, '').trim();
+            core.setOutput('instruction', instruction);
+            core.setOutput('comment_author', context.payload.comment.user.login);
+      
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr-details.outputs.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Git Configuration
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Get Current PR Files
+        id: pr-files
+        run: |
+          # Get list of files changed in this PR
+          git diff --name-only origin/${{ steps.pr-details.outputs.base_branch }}..HEAD > changed_files.txt
+          
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          cat changed_files.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Get the content of changed files for context
+          echo "file_contents<<EOF" >> $GITHUB_OUTPUT
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              echo "=== File: $file ==="
+              head -100 "$file" 2>/dev/null || true
+              echo ""
+            fi
+          done < changed_files.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Analyze Update Request
+        id: analyze-update
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: |
+            You are an expert software engineer tasked with understanding and implementing code change requests.
+            Based on the user's instruction and the current PR state, determine what changes need to be made.
+            
+            Respond in JSON format with the following structure:
+            {
+              "update_type": "modify|add|remove|refactor",
+              "files_to_modify": ["path/to/file1", "path/to/file2"],
+              "files_to_add": ["path/to/newfile"],
+              "files_to_remove": ["path/to/deletefile"],
+              "change_summary": "Brief description of what changes will be made",
+              "feasible": true/false,
+              "reason_if_not_feasible": "Explanation if changes cannot be made"
+            }
+          prompt: |
+            User Instruction: ${{ steps.pr-details.outputs.instruction }}
+            Comment Author: @${{ steps.pr-details.outputs.comment_author }}
+            
+            Current PR Title: ${{ steps.pr-details.outputs.pr_title }}
+            
+            Files currently changed in this PR:
+            ${{ steps.pr-files.outputs.changed_files }}
+            
+            Sample content from changed files:
+            ${{ steps.pr-files.outputs.file_contents }}
+            
+            Analyze what needs to be changed based on the user's instruction.
+      
+      - name: Parse Update Plan
+        id: parse-update-plan
+        uses: actions/github-script@v7
+        env:
+          AI_RESPONSE: ${{ steps.analyze-update.outputs.response }}
+        with:
+          script: |
+            let plan;
+            try {
+              const response = process.env.AI_RESPONSE;
+              const jsonStr = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+              plan = JSON.parse(jsonStr);
+            } catch (e) {
+              console.error('Failed to parse AI response:', e);
+              plan = {
+                update_type: 'modify',
+                files_to_modify: [],
+                files_to_add: [],
+                files_to_remove: [],
+                change_summary: 'Unable to parse update request',
+                feasible: false,
+                reason_if_not_feasible: 'Failed to understand the request'
+              };
+            }
+            
+            if (!plan.feasible) {
+              core.setFailed(plan.reason_if_not_feasible || 'Update not feasible');
+              return;
+            }
+            
+            core.setOutput('update_type', plan.update_type);
+            core.setOutput('files_to_modify', JSON.stringify(plan.files_to_modify));
+            core.setOutput('files_to_add', JSON.stringify(plan.files_to_add));
+            core.setOutput('files_to_remove', JSON.stringify(plan.files_to_remove));
+            core.setOutput('change_summary', plan.change_summary);
+      
+      - name: Generate Updated Code
+        id: generate-updates
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 4000
+          system-prompt: |
+            You are an expert software engineer. Generate updated code based on the change request.
+            Follow these guidelines:
+            1. Maintain consistency with existing code style
+            2. Only make the requested changes, don't alter unrelated code
+            3. Include proper error handling
+            4. Add comments for complex changes
+            5. If updating multiple files, separate them with "--- FILE: path/to/file ---"
+            6. For file modifications, provide the complete updated file content
+            7. Only output code, no explanations
+          prompt: |
+            Update Request: ${{ steps.pr-details.outputs.instruction }}
+            
+            Changes to implement: ${{ steps.parse-update-plan.outputs.change_summary }}
+            Files to modify: ${{ steps.parse-update-plan.outputs.files_to_modify }}
+            Files to add: ${{ steps.parse-update-plan.outputs.files_to_add }}
+            Files to remove: ${{ steps.parse-update-plan.outputs.files_to_remove }}
+            
+            Current file contents:
+            ${{ steps.pr-files.outputs.file_contents }}
+            
+            Generate the updated code based on the request.
+      
+      - name: Apply Updates
+        id: apply-updates
+        env:
+          CODE_UPDATES: ${{ steps.generate-updates.outputs.response }}
+          FILES_TO_MODIFY: ${{ steps.parse-update-plan.outputs.files_to_modify }}
+          FILES_TO_ADD: ${{ steps.parse-update-plan.outputs.files_to_add }}
+          FILES_TO_REMOVE: ${{ steps.parse-update-plan.outputs.files_to_remove }}
+          PR_NUMBER: ${{ steps.pr-details.outputs.pr_number }}
+          INSTRUCTION: ${{ steps.pr-details.outputs.instruction }}
+        run: |
+          # Process the updated code
+          cat > apply_updates.py << 'PYTHON_SCRIPT'
+          import os
+          import json
+          import re
+          
+          code_updates = os.environ.get('CODE_UPDATES', '')
+          files_to_modify = json.loads(os.environ.get('FILES_TO_MODIFY', '[]'))
+          files_to_add = json.loads(os.environ.get('FILES_TO_ADD', '[]'))
+          files_to_remove = json.loads(os.environ.get('FILES_TO_REMOVE', '[]'))
+          
+          # Remove files if specified
+          for filepath in files_to_remove:
+              if os.path.exists(filepath):
+                  os.remove(filepath)
+                  print(f"Removed: {filepath}")
+          
+          # Split code by file markers
+          file_pattern = r'--- FILE: (.*?) ---'
+          parts = re.split(file_pattern, code_updates)
+          
+          # Process files
+          if len(parts) > 1:
+              # Multiple files specified in the output
+              for i in range(1, len(parts), 2):
+                  if i < len(parts) - 1:
+                      filepath = parts[i].strip()
+                      content = parts[i + 1].strip()
+                      
+                      # Create directory if needed
+                      os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+                      
+                      # Write file
+                      with open(filepath, 'w') as f:
+                          f.write(content)
+                      print(f"Updated/Created: {filepath}")
+          else:
+              # Single file update
+              all_files = files_to_modify + files_to_add
+              if all_files:
+                  filepath = all_files[0]
+                  
+                  # Create directory if needed
+                  os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+                  
+                  # Write the content
+                  with open(filepath, 'w') as f:
+                      f.write(code_updates)
+                  print(f"Updated: {filepath}")
+          PYTHON_SCRIPT
+          
+          python3 apply_updates.py
+          
+          # Check if there are any changes
+          if git diff --quiet; then
+            echo "No changes detected"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            
+            # Add and commit changes
+            git add -A
+            
+            # Create a descriptive commit message
+            COMMIT_MSG="AI Update: Responding to @hank mention
+          
+          Request: ${INSTRUCTION:0:200}
+          
+          This update was automatically generated based on the comment in PR #${PR_NUMBER}."
+            
+            git commit -m "$COMMIT_MSG"
+            
+            # Push the changes
+            git push origin HEAD
+          fi
+      
+      - name: Post Success Comment
+        if: steps.apply-updates.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.pr-details.outputs.pr_number }}
+          CHANGE_SUMMARY: ${{ steps.parse-update-plan.outputs.change_summary }}
+          COMMENT_AUTHOR: ${{ steps.pr-details.outputs.comment_author }}
+        with:
+          script: |
+            // Update the reaction to checkmark
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+            
+            // Post a success comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(process.env.PR_NUMBER),
+              body: `🤖 **@hank Update Complete**
+              
+              Hey @${process.env.COMMENT_AUTHOR}, I've updated the PR based on your request!
+              
+              ### 📝 Changes Made
+              ${process.env.CHANGE_SUMMARY}
+              
+              ### 🔄 What's Next?
+              - Review the updated changes
+              - Run tests to ensure everything works
+              - Request more changes by mentioning @hank again if needed
+              
+              ---
+              *Powered by GitHub Models AI*`
+            });
+      
+      - name: Post No Changes Comment
+        if: steps.apply-updates.outputs.has_changes == 'false'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.pr-details.outputs.pr_number }}
+          COMMENT_AUTHOR: ${{ steps.pr-details.outputs.comment_author }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(process.env.PR_NUMBER),
+              body: `🤖 **@hank Response**
+              
+              Hey @${process.env.COMMENT_AUTHOR}, I processed your request but didn't find any changes to make.
+              
+              This might happen if:
+              - The requested changes are already present
+              - The instruction wasn't specific enough
+              - The changes conflict with the existing code structure
+              
+              Please provide more specific instructions and mention @hank again!
+              
+              ---
+              *Powered by GitHub Models AI*`
+            });
+      
+      - name: Handle Update Errors
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.pr-details.outputs.pr_number }}
+          COMMENT_AUTHOR: ${{ steps.pr-details.outputs.comment_author }}
+        with:
+          script: |
+            // Update reaction to show error
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'confused'
+            });
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(process.env.PR_NUMBER),
+              body: `❌ **@hank Update Failed**
+              
+              Hey @${process.env.COMMENT_AUTHOR}, I encountered an error while trying to update the PR.
+              
+              This could be due to:
+              - The request being too complex or ambiguous
+              - Conflicts with the current code structure
+              - API limitations or processing errors
+              
+              ### 💡 Suggestions
+              - Try being more specific about what needs to be changed
+              - Break down complex requests into smaller parts
+              - Check if the files you want to modify exist in the PR
+              
+              You can try again by mentioning @hank with a clearer instruction!
+              
+              ---
+              *Powered by GitHub Models AI*`
+            });
