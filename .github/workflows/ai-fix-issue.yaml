@@ -9,6 +9,8 @@ permissions:
   issues: write        # For commenting on issues
   pull-requests: write # For creating pull requests
   models: read         # For GitHub Models access
+  metadata: read       # For GitHub MCP server
+  repository-projects: read # For GitHub MCP server
 
 jobs:
   generate-pr:
@@ -71,41 +73,18 @@ jobs:
         id: analyze-issue
         uses: actions/ai-inference@v1.2.8
         with:
-          model: openai/gpt-4o-mini
-          prompt: |
-            Issue Title: ${{ steps.issue-details.outputs.title }}
-            Issue Description: ${{ steps.issue-details.outputs.body }}
-            
-            Repository Files:
-            ${{ steps.repo-structure.outputs.files }}
-            
-            Project Type Indicators:
-            - Has package.json: ${{ steps.repo-structure.outputs.has_package_json }}
-            - Has requirements.txt: ${{ steps.repo-structure.outputs.has_requirements }}
-            - Has Gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
-            - Has Cargo.toml: ${{ steps.repo-structure.outputs.has_cargo }}
-            - Has go.mod: ${{ steps.repo-structure.outputs.has_go_mod }}
-          system-prompt: |
-            You are an expert software engineer with file system access through MCP.
-            Based on the issue description and repository structure, you need to:
-            1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
-            2. Determine which files need to be modified, created, or removed
-            3. Provide a clear implementation plan with proper git operations for file management
-            
-            Respond in JSON format with the following structure:
-            {
-              "change_type": "feature|bugfix|docs|refactor|test",
-              "files_to_modify": ["path/to/file1", "path/to/file2"],
-              "files_to_create": ["path/to/newfile"],
-              "implementation_summary": "Brief description of what needs to be done",
-              "complexity": "simple|medium|complex"
-            }
-            
-            Only suggest changes to existing files if they are in the repository structure provided.
-            Be conservative and practical - suggest minimal changes needed to address the issue.
+          prompt-file: './.github/prompts/analyze-issue.prompt.yml'
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
+          input: |
+            issue_title: ${{ steps.issue-details.outputs.title }}
+            issue_body: ${{ steps.issue-details.outputs.body }}
+            repo_files: ${{ steps.repo-structure.outputs.files }}
+            has_package_json: ${{ steps.repo-structure.outputs.has_package_json }}
+            has_requirements: ${{ steps.repo-structure.outputs.has_requirements }}
+            has_gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
+            has_cargo: ${{ steps.repo-structure.outputs.has_cargo }}
+            has_go_mod: ${{ steps.repo-structure.outputs.has_go_mod }}
       
       - name: Parse Implementation Plan
         id: parse-plan
@@ -143,40 +122,16 @@ jobs:
         id: generate-code
         uses: actions/ai-inference@v1.2.8
         with:
-          model: openai/gpt-4o
+          prompt-file: './.github/prompts/generate-code.prompt.yml'
           max-tokens: 4000
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            Issue Title: ${{ steps.issue-details.outputs.title }}
-            Issue Description: ${{ steps.issue-details.outputs.body }}
-            
-            Implementation Plan: ${{ steps.parse-plan.outputs.implementation_summary }}
-            Files to modify: ${{ steps.parse-plan.outputs.files_to_modify }}
-            Files to create: ${{ steps.parse-plan.outputs.files_to_create }}
-            
-            Use MCP file operations to implement the necessary changes for this issue.
-          system-prompt: |
-            You are an expert software engineer with MCP file system access for direct file operations.
-            
-            You MUST use MCP tools to:
-            1. Read existing files to understand the current codebase structure
-            2. Create new files or modify existing files directly in the repository
-            3. Use MCP filesystem operations to make actual changes
-            
-            Implementation requirements:
-            - Use MCP file_read to examine existing code
-            - Use MCP file_write to create new files
-            - Use MCP file_edit to modify existing files
-            - Follow project conventions and code style
-            - Write clean, maintainable, well-commented code
-            - Include proper error handling
-            - Create directories using MCP if needed
-            
-            IMPORTANT: You must actually perform the file operations using MCP tools. Do not just describe what should be done - DO the file operations.
-            
-            After completing all file operations, provide a brief summary of the changes made.
+          input: |
+            issue_title: ${{ steps.issue-details.outputs.title }}
+            issue_body: ${{ steps.issue-details.outputs.body }}
+            implementation_summary: ${{ steps.parse-plan.outputs.implementation_summary }}
+            files_to_modify: ${{ steps.parse-plan.outputs.files_to_modify }}
+            files_to_create: ${{ steps.parse-plan.outputs.files_to_create }}
       
       - name: Create Branch and Commit Changes
         id: create-branch

@@ -11,6 +11,8 @@ permissions:
   issues: write        # For commenting on issues
   pull-requests: write # For creating pull requests
   models: read         # For GitHub Models access
+  metadata: read       # For GitHub MCP server
+  repository-projects: read # For GitHub MCP server
 
 jobs:
   # Job for updating PR when @hank_bot is mentioned
@@ -106,37 +108,15 @@ jobs:
         id: analyze-update
         uses: actions/ai-inference@v1.2.8
         with:
-          model: openai/gpt-4o-mini
+          prompt-file: './.github/prompts/analyze-update.prompt.yml'
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            User Instruction: ${{ steps.pr-details.outputs.instruction }}
-            Comment Author: @${{ steps.pr-details.outputs.comment_author }}
-            
-            Current PR Title: ${{ steps.pr-details.outputs.pr_title }}
-            
-            Files currently changed in this PR:
-            ${{ steps.pr-files.outputs.changed_files }}
-            
-            Sample content from changed files:
-            ${{ steps.pr-files.outputs.file_contents }}
-            
-            Analyze what needs to be changed based on the user's instruction.
-          system-prompt: |
-            You are an expert software engineer tasked with understanding and implementing code change requests.
-            Based on the user's instruction and the current PR state, determine what changes need to be made.
-            
-            Respond in JSON format with the following structure:
-            {
-              "update_type": "modify|add|remove|refactor",
-              "files_to_modify": ["path/to/file1", "path/to/file2"],
-              "files_to_add": ["path/to/newfile"],
-              "files_to_remove": ["path/to/deletefile"],
-              "change_summary": "Brief description of what changes will be made",
-              "feasible": true/false,
-              "reason_if_not_feasible": "Explanation if changes cannot be made"
-            }
+          input: |
+            user_instruction: ${{ steps.pr-details.outputs.instruction }}
+            comment_author: ${{ steps.pr-details.outputs.comment_author }}
+            pr_title: ${{ steps.pr-details.outputs.pr_title }}
+            changed_files: ${{ steps.pr-files.outputs.changed_files }}
+            file_contents: ${{ steps.pr-files.outputs.file_contents }}
       
       - name: Parse Update Plan
         id: parse-update-plan
@@ -178,44 +158,17 @@ jobs:
         id: generate-updates
         uses: actions/ai-inference@v1.2.8
         with:
-          model: openai/gpt-4o
+          prompt-file: './.github/prompts/generate-updates.prompt.yml'
           max-tokens: 4000
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            Update Request: ${{ steps.pr-details.outputs.instruction }}
-            
-            Changes to implement: ${{ steps.parse-update-plan.outputs.change_summary }}
-            Files to modify: ${{ steps.parse-update-plan.outputs.files_to_modify }}
-            Files to add: ${{ steps.parse-update-plan.outputs.files_to_add }}
-            Files to remove: ${{ steps.parse-update-plan.outputs.files_to_remove }}
-            
-            Current file contents:
-            ${{ steps.pr-files.outputs.file_contents }}
-            
-            Generate the updated code based on the request.
-          system-prompt: |
-            You are an expert software engineer with access to MCP file system operations.
-            You MUST use MCP tools to directly modify the repository files based on the change request.
-            
-            Use MCP file operations to:
-            1. Read existing files to understand current code structure
-            2. Write new files or modify existing files directly in the repository 
-            3. Remove files if requested (using proper MCP operations)
-            
-            Implementation requirements:
-            - Use MCP file_read to examine existing code
-            - Use MCP file_write to create new files
-            - Use MCP file_edit to modify existing files
-            - Maintain consistency with existing code style
-            - Only make the requested changes, don't alter unrelated code
-            - Include proper error handling and comments for complex changes
-            - Follow project conventions and code style
-            
-            IMPORTANT: You must actually perform the file operations using MCP tools. Do not just output code - DO the file operations.
-            
-            After completing all file operations, provide a brief summary of the changes made.
+          input: |
+            update_request: ${{ steps.pr-details.outputs.instruction }}
+            change_summary: ${{ steps.parse-update-plan.outputs.change_summary }}
+            files_to_modify: ${{ steps.parse-update-plan.outputs.files_to_modify }}
+            files_to_add: ${{ steps.parse-update-plan.outputs.files_to_add }}
+            files_to_remove: ${{ steps.parse-update-plan.outputs.files_to_remove }}
+            file_contents: ${{ steps.pr-files.outputs.file_contents }}
       
       - name: Check for Changes and Commit
         id: apply-updates
