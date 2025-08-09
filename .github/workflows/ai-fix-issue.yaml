@@ -105,6 +105,7 @@ jobs:
             Be conservative and practical - suggest minimal changes needed to address the issue.
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Parse Implementation Plan
         id: parse-plan
@@ -146,6 +147,7 @@ jobs:
           max-tokens: 4000
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Issue Title: ${{ steps.issue-details.outputs.title }}
             Issue Description: ${{ steps.issue-details.outputs.body }}
