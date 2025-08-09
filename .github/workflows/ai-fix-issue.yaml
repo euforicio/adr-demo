@@ -68,6 +68,12 @@ jobs:
           echo "has_cargo=$([[ -f Cargo.toml ]] && echo true || echo false)" >> $GITHUB_OUTPUT
           echo "has_go_mod=$([[ -f go.mod ]] && echo true || echo false)" >> $GITHUB_OUTPUT
       
+      - name: Create Temp Files for Analysis
+        run: |
+          echo "${{ steps.repo-structure.outputs.files }}" > /tmp/repo_files.txt
+          echo "${{ steps.issue-details.outputs.title }}" > /tmp/issue_title.txt
+          echo "${{ steps.issue-details.outputs.body }}" > /tmp/issue_body.txt
+      
       - name: Analyze Issue and Generate Implementation Plan
         id: analyze-issue
         uses: actions/ai-inference@v1.2.8
@@ -76,14 +82,15 @@ jobs:
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
           input: |
-            issue_title: ${{ steps.issue-details.outputs.title }}
-            issue_body: ${{ steps.issue-details.outputs.body }}
-            repo_files: ${{ steps.repo-structure.outputs.files }}
             has_package_json: ${{ steps.repo-structure.outputs.has_package_json }}
             has_requirements: ${{ steps.repo-structure.outputs.has_requirements }}
             has_gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
             has_cargo: ${{ steps.repo-structure.outputs.has_cargo }}
             has_go_mod: ${{ steps.repo-structure.outputs.has_go_mod }}
+          file_input: |
+            repo_files: /tmp/repo_files.txt
+            issue_title: /tmp/issue_title.txt
+            issue_body: /tmp/issue_body.txt
       
       - name: Parse Implementation Plan
         id: parse-plan

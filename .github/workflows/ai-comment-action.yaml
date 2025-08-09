@@ -103,6 +103,13 @@ jobs:
           done < changed_files.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       
+      - name: Create Temp Files for Update Analysis
+        run: |
+          echo "${{ steps.pr-details.outputs.instruction }}" > /tmp/user_instruction.txt
+          echo "${{ steps.pr-details.outputs.pr_title }}" > /tmp/pr_title.txt
+          echo "${{ steps.pr-files.outputs.changed_files }}" > /tmp/changed_files.txt
+          echo "${{ steps.pr-files.outputs.file_contents }}" > /tmp/file_contents.txt
+      
       - name: Analyze Update Request
         id: analyze-update
         uses: actions/ai-inference@v1.2.8
@@ -111,11 +118,12 @@ jobs:
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
           input: |
-            user_instruction: ${{ steps.pr-details.outputs.instruction }}
             comment_author: ${{ steps.pr-details.outputs.comment_author }}
-            pr_title: ${{ steps.pr-details.outputs.pr_title }}
-            changed_files: ${{ steps.pr-files.outputs.changed_files }}
-            file_contents: ${{ steps.pr-files.outputs.file_contents }}
+          file_input: |
+            user_instruction: /tmp/user_instruction.txt
+            pr_title: /tmp/pr_title.txt
+            changed_files: /tmp/changed_files.txt
+            file_contents: /tmp/file_contents.txt
       
       - name: Parse Update Plan
         id: parse-update-plan
@@ -162,12 +170,13 @@ jobs:
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
           input: |
-            update_request: ${{ steps.pr-details.outputs.instruction }}
             change_summary: ${{ steps.parse-update-plan.outputs.change_summary }}
             files_to_modify: ${{ steps.parse-update-plan.outputs.files_to_modify }}
             files_to_add: ${{ steps.parse-update-plan.outputs.files_to_add }}
             files_to_remove: ${{ steps.parse-update-plan.outputs.files_to_remove }}
-            file_contents: ${{ steps.pr-files.outputs.file_contents }}
+          file_input: |
+            update_request: /tmp/user_instruction.txt
+            file_contents: /tmp/file_contents.txt
       
       - name: Check for Changes and Commit
         id: apply-updates
