@@ -11,7 +11,6 @@ permissions:
   issues: write        # For commenting on issues
   pull-requests: write # For creating pull requests
   models: read         # For GitHub Models access
-  repository-projects: read # For GitHub MCP server
 
 jobs:
   # Job for updating PR when @hank_bot is mentioned
@@ -73,9 +72,25 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Setup Environment
+      - name: Setup MCP for File Operations
         run: |
-          echo "Setting up environment for AI code generation"
+          # Install Node.js MCP packages for file operations
+          npm install -g @modelcontextprotocol/server-filesystem
+          
+          # Setup MCP server configuration
+          cat > mcp-config.json << 'EOF'
+          {
+            "mcpServers": {
+              "filesystem": {
+                "command": "npx",
+                "args": ["@modelcontextprotocol/server-filesystem", "/tmp"],
+                "env": {
+                  "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
+                }
+              }
+            }
+          }
+          EOF
       
       - name: Setup Git Configuration
         run: |
@@ -103,26 +118,38 @@ jobs:
           done < changed_files.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       
-      - name: Create temp files for analysis
-        run: |
-          echo '${{ steps.pr-details.outputs.instruction }}' > /tmp/instruction.txt
-          echo '${{ steps.pr-details.outputs.comment_author }}' > /tmp/comment_author.txt
-          echo '${{ steps.pr-details.outputs.pr_title }}' > /tmp/pr_title.txt
-          echo '${{ steps.pr-files.outputs.changed_files }}' > /tmp/changed_files.txt
-          echo '${{ steps.pr-files.outputs.file_contents }}' > /tmp/file_contents.txt
-      
       - name: Analyze Update Request
         id: analyze-update
-        uses: actions/ai-inference@v1.2.8
+        uses: actions/ai-inference@v1
         with:
-          prompt-file: './.github/prompts/analyze-pr-update.prompt.yml'
-          enable-github-mcp: true
-          file_input: |
-            instruction: /tmp/instruction.txt
-            comment_author: /tmp/comment_author.txt
-            pr_title: /tmp/pr_title.txt
-            changed_files: /tmp/changed_files.txt
-            file_contents: /tmp/file_contents.txt
+          model: openai/gpt-4o-mini
+          system-prompt: |
+            You are an expert software engineer tasked with understanding and implementing code change requests.
+            Based on the user's instruction and the current PR state, determine what changes need to be made.
+            
+            Respond in JSON format with the following structure:
+            {
+              "update_type": "modify|add|remove|refactor",
+              "files_to_modify": ["path/to/file1", "path/to/file2"],
+              "files_to_add": ["path/to/newfile"],
+              "files_to_remove": ["path/to/deletefile"],
+              "change_summary": "Brief description of what changes will be made",
+              "feasible": true/false,
+              "reason_if_not_feasible": "Explanation if changes cannot be made"
+            }
+          prompt: |
+            User Instruction: ${{ steps.pr-details.outputs.instruction }}
+            Comment Author: @${{ steps.pr-details.outputs.comment_author }}
+            
+            Current PR Title: ${{ steps.pr-details.outputs.pr_title }}
+            
+            Files currently changed in this PR:
+            ${{ steps.pr-files.outputs.changed_files }}
+            
+            Sample content from changed files:
+            ${{ steps.pr-files.outputs.file_contents }}
+            
+            Analyze what needs to be changed based on the user's instruction.
       
       - name: Parse Update Plan
         id: parse-update-plan
@@ -160,44 +187,115 @@ jobs:
             core.setOutput('files_to_remove', JSON.stringify(plan.files_to_remove));
             core.setOutput('change_summary', plan.change_summary);
       
-      - name: Create temp files for code generation
-        run: |
-          echo '${{ steps.pr-details.outputs.instruction }}' > /tmp/instruction2.txt
-          echo '${{ steps.parse-update-plan.outputs.change_summary }}' > /tmp/change_summary.txt
-          echo '${{ steps.parse-update-plan.outputs.files_to_modify }}' > /tmp/files_to_modify.txt
-          echo '${{ steps.parse-update-plan.outputs.files_to_add }}' > /tmp/files_to_add.txt
-          echo '${{ steps.parse-update-plan.outputs.files_to_remove }}' > /tmp/files_to_remove.txt
-          echo '${{ steps.pr-files.outputs.file_contents }}' > /tmp/file_contents2.txt
-      
       - name: Generate Updated Code
         id: generate-updates
-        uses: actions/ai-inference@v1.2.8
+        uses: actions/ai-inference@v1
         with:
-          prompt-file: './.github/prompts/generate-pr-updates.prompt.yml'
+          model: openai/gpt-4o
           max-tokens: 4000
-          enable-github-mcp: true
-          file_input: |
-            instruction: /tmp/instruction2.txt
-            change_summary: /tmp/change_summary.txt
-            files_to_modify: /tmp/files_to_modify.txt
-            files_to_add: /tmp/files_to_add.txt
-            files_to_remove: /tmp/files_to_remove.txt
-            file_contents: /tmp/file_contents2.txt
+          system-prompt: |
+            You are an expert software engineer with access to file system operations through MCP.
+            Generate updated code based on the change request and handle file operations properly.
+            Follow these guidelines:
+            1. Maintain consistency with existing code style
+            2. Only make the requested changes, don't alter unrelated code
+            3. Include proper error handling
+            4. Add comments for complex changes
+            5. If updating multiple files, separate them with "--- FILE: path/to/file ---"
+            6. For file modifications, provide the complete updated file content
+            7. Use git operations for file removal (files will be properly removed using git rm)
+            8. Only output code, no explanations
+            9. When removing files, ensure they are tracked in git before removal
+          prompt: |
+            Update Request: ${{ steps.pr-details.outputs.instruction }}
+            
+            Changes to implement: ${{ steps.parse-update-plan.outputs.change_summary }}
+            Files to modify: ${{ steps.parse-update-plan.outputs.files_to_modify }}
+            Files to add: ${{ steps.parse-update-plan.outputs.files_to_add }}
+            Files to remove: ${{ steps.parse-update-plan.outputs.files_to_remove }}
+            
+            Current file contents:
+            ${{ steps.pr-files.outputs.file_contents }}
+            
+            Generate the updated code based on the request.
       
-      - name: Check for Changes and Commit
+      - name: Apply Updates
         id: apply-updates
         env:
+          CODE_UPDATES: ${{ steps.generate-updates.outputs.response }}
+          FILES_TO_MODIFY: ${{ steps.parse-update-plan.outputs.files_to_modify }}
+          FILES_TO_ADD: ${{ steps.parse-update-plan.outputs.files_to_add }}
+          FILES_TO_REMOVE: ${{ steps.parse-update-plan.outputs.files_to_remove }}
           PR_NUMBER: ${{ steps.pr-details.outputs.pr_number }}
           INSTRUCTION: ${{ steps.pr-details.outputs.instruction }}
         run: |
-          # MCP should have already made the file changes during the Generate Updated Code step
+          # Process the updated code
+          cat > apply_updates.py << 'PYTHON_SCRIPT'
+          import os
+          import json
+          import re
+          
+          code_updates = os.environ.get('CODE_UPDATES', '')
+          files_to_modify = json.loads(os.environ.get('FILES_TO_MODIFY', '[]'))
+          files_to_add = json.loads(os.environ.get('FILES_TO_ADD', '[]'))
+          files_to_remove = json.loads(os.environ.get('FILES_TO_REMOVE', '[]'))
+          
+          # Remove files if specified with proper git operations
+          for filepath in files_to_remove:
+              if os.path.exists(filepath):
+                  # Use git rm to properly remove tracked files
+                  import subprocess
+                  try:
+                      subprocess.run(['git', 'rm', filepath], check=True, capture_output=True)
+                      print(f"Git removed: {filepath}")
+                  except subprocess.CalledProcessError:
+                      # If git rm fails, fall back to regular removal
+                      os.remove(filepath)
+                      print(f"Force removed: {filepath}")
+              else:
+                  print(f"File not found (already removed?): {filepath}")
+          
+          # Split code by file markers
+          file_pattern = r'--- FILE: (.*?) ---'
+          parts = re.split(file_pattern, code_updates)
+          
+          # Process files
+          if len(parts) > 1:
+              # Multiple files specified in the output
+              for i in range(1, len(parts), 2):
+                  if i < len(parts) - 1:
+                      filepath = parts[i].strip()
+                      content = parts[i + 1].strip()
+                      
+                      # Create directory if needed
+                      os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+                      
+                      # Write file
+                      with open(filepath, 'w') as f:
+                          f.write(content)
+                      print(f"Updated/Created: {filepath}")
+          else:
+              # Single file update
+              all_files = files_to_modify + files_to_add
+              if all_files:
+                  filepath = all_files[0]
+                  
+                  # Create directory if needed
+                  os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+                  
+                  # Write the content
+                  with open(filepath, 'w') as f:
+                      f.write(code_updates)
+                  print(f"Updated: {filepath}")
+          PYTHON_SCRIPT
+          
+          python3 apply_updates.py
+          
           # Check if there are any changes
-          if git diff --quiet && git diff --cached --quiet; then
-            echo "No changes detected from MCP operations"
+          if git diff --quiet; then
+            echo "No changes detected"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            echo "Changes detected! Files modified by MCP operations:"
-            git status --porcelain
             echo "has_changes=true" >> $GITHUB_OUTPUT
             
             # Add and commit changes
