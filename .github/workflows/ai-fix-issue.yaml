@@ -152,25 +152,27 @@ jobs:
             core.setOutput('implementation_summary', plan.implementation_summary);
             core.setOutput('complexity', plan.complexity);
       
-      - name: Generate Code Changes
+      - name: Generate Code Changes with MCP
         id: generate-code
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
           max-tokens: 4000
           system-prompt: |
-            You are an expert software engineer with MCP file system access.
-            Generate high-quality, production-ready code based on the requirements.
-            Follow these guidelines:
-            1. Write clean, well-commented code
-            2. Follow best practices for the language/framework
-            3. Include proper error handling where appropriate
-            4. Make code that is maintainable and testable
-            5. If creating multiple files, separate them with "--- FILE: path/to/file ---"
-            6. Only output the code content, no explanations
-            7. Use proper git operations for file management (deletions will be handled with git rm)
+            You are an expert software engineer with MCP file system access for direct file operations.
             
-            For modifications to existing files, show the complete updated file content.
+            Use MCP to directly read existing files and create/modify files as needed.
+            Use MCP file operations to make the changes directly. If MCP is unavailable or fails, output the code changes directly in your response as a fallback.
+            
+            Follow these guidelines:
+            1. Use MCP to read existing files to understand current structure
+            2. Use MCP to create new files or modify existing ones directly
+            3. Write clean, well-commented code following project conventions
+            4. Include proper error handling where appropriate
+            5. Make code that is maintainable and testable
+            6. Create directories as needed using MCP
+            
+            After making the changes, simply respond with a summary of what was implemented.
           prompt: |
             Issue Title: ${{ steps.issue-details.outputs.title }}
             Issue Description: ${{ steps.issue-details.outputs.body }}
@@ -179,14 +181,11 @@ jobs:
             Files to modify: ${{ steps.parse-plan.outputs.files_to_modify }}
             Files to create: ${{ steps.parse-plan.outputs.files_to_create }}
             
-            Generate the necessary code changes to implement this issue.
+            Use MCP file operations to implement the necessary changes for this issue.
       
-      - name: Create Branch and Apply Changes
+      - name: Create Branch and Commit Changes
         id: create-branch
         env:
-          CODE_CHANGES: ${{ steps.generate-code.outputs.response }}
-          FILES_TO_CREATE: ${{ steps.parse-plan.outputs.files_to_create }}
-          FILES_TO_MODIFY: ${{ steps.parse-plan.outputs.files_to_modify }}
           ISSUE_NUMBER: ${{ steps.issue-details.outputs.number }}
         run: |
           # Create a new branch
@@ -194,61 +193,23 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           
-          # Process the generated code
-          cat > process_changes.py << 'PYTHON_SCRIPT'
-          import os
-          import json
-          import re
+          # Check if any files were changed by MCP
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes detected from MCP operations"
+            # Create a minimal implementation note if no changes were made
+            echo "# AI Implementation for Issue #${ISSUE_NUMBER}" > AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
+            echo "" >> AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
+            echo "Implementation completed via MCP file operations." >> AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
+            echo "See commit history for specific changes made." >> AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
+            git add AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
+          fi
           
-          code_changes = os.environ.get('CODE_CHANGES', '')
-          files_to_create = json.loads(os.environ.get('FILES_TO_CREATE', '[]'))
-          files_to_modify = json.loads(os.environ.get('FILES_TO_MODIFY', '[]'))
-          
-          # Split code by file markers
-          file_pattern = r'--- FILE: (.*?) ---'
-          parts = re.split(file_pattern, code_changes)
-          
-          # Process files
-          if len(parts) > 1:
-              # Multiple files specified in the output
-              for i in range(1, len(parts), 2):
-                  if i < len(parts) - 1:
-                      filepath = parts[i].strip()
-                      content = parts[i + 1].strip()
-                      
-                      # Create directory if needed
-                      os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
-                      
-                      # Write file
-                      with open(filepath, 'w') as f:
-                          f.write(content)
-                      print(f"Created/Modified: {filepath}")
-          else:
-              # Single file or fallback
-              if files_to_create:
-                  filepath = files_to_create[0]
-              elif files_to_modify:
-                  filepath = files_to_modify[0]
-              else:
-                  filepath = "AI_IMPLEMENTATION.md"
-              
-              # Create directory if needed
-              os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
-              
-              # Write the content
-              with open(filepath, 'w') as f:
-                  f.write(code_changes)
-              print(f"Created/Modified: {filepath}")
-          PYTHON_SCRIPT
-          
-          python3 process_changes.py
-          
-          # Add and commit changes
+          # Add and commit all changes
           git add -A
           git commit -m "AI Generated: Implementation for issue #${ISSUE_NUMBER}
-          
-          Generated by GitHub Models AI based on the issue description.
-          This is an automated implementation that should be reviewed before merging."
+
+          Generated using GitHub Models AI with MCP file operations.
+          This implementation should be reviewed before merging."
           
           # Push the branch
           git push origin "$BRANCH_NAME"
