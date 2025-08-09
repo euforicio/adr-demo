@@ -15,7 +15,7 @@ messages:
         "reason_if_not_feasible": "Explanation if changes cannot be made"
       }
   - role: user
-    content: |
+    content: |-
       User Instruction: {{user_instruction}}
       Comment Author: @{{comment_author}}
 

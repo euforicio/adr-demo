@@ -1,6 +1,6 @@
 messages:
   - role: system
-    content: |
+    content: |-
       You are an expert software engineer with MCP file system access for direct file operations.
 
       You MUST use MCP tools to:
@@ -21,7 +21,7 @@ messages:
 
       After completing all file operations, provide a brief summary of the changes made.
   - role: user
-    content: |
+    content: |-
       Issue Title: {{issue_title}}
       Issue Description: {{issue_body}}
 

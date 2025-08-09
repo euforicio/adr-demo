@@ -19,7 +19,7 @@ messages:
       Only suggest changes to existing files if they are in the repository structure provided.
       Be conservative and practical - suggest minimal changes needed to address the issue.
   - role: user
-    content: |
+    content: |-
       Issue Title: {{issue_title}}
       Issue Description: {{issue_body}}
 
@@ -27,10 +27,10 @@ messages:
       {{repo_files}}
 
       Project Type Indicators:
-      - Has package.json: {{has_package_json}}
-      - Has requirements.txt: {{has_requirements}}
-      - Has Gemfile: {{has_gemfile}}
-      - Has Cargo.toml: {{has_cargo}}
-      - Has go.mod: {{has_go_mod}}
+      Has package.json: {{has_package_json}}
+      Has requirements.txt: {{has_requirements}}
+      Has Gemfile: {{has_gemfile}}
+      Has Cargo.toml: {{has_cargo}}
+      Has go.mod: {{has_go_mod}}
 model: openai/gpt-4o-mini
 responseFormat: json_object

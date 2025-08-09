@@ -1,6 +1,6 @@
 messages:
   - role: system
-    content: |
+    content: |-
       You are an expert software engineer with access to MCP file system operations.
       You MUST use MCP tools to directly modify the repository files based on the change request.
 
@@ -22,7 +22,7 @@ messages:
 
       After completing all file operations, provide a brief summary of the changes made.
   - role: user
-    content: |
+    content: |-
       Update Request: {{update_request}}
 
       Changes to implement: {{change_summary}}
