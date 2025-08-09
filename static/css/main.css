@@ -1,0 +1,344 @@
+/* ADR Generator - Using Tailwind Dark Mode */
+
+/* Only essential styles that Tailwind cannot handle */
+
+/* Mermaid modal styles (complex modal positioning) */
+.mermaid-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.mermaid-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    width: 95vw;
+    height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.mermaid-svg-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    position: relative;
+}
+
+.mermaid-svg-container:active {
+    cursor: grabbing;
+}
+
+.mermaid-svg-container.panning {
+    cursor: grabbing;
+}
+
+.mermaid-modal-content svg {
+    transition: transform 0.2s ease;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* Ensure proper text colors in modal for both light and dark modes */
+.mermaid-modal-content svg text {
+    fill: #111827 !important;
+    color: #111827 !important;
+}
+
+.dark .mermaid-modal-content svg text {
+    fill: #f9fafb !important;
+    color: #f9fafb !important;
+}
+
+.dark .mermaid-modal-content svg .node text,
+.dark .mermaid-modal-content svg .label text,
+.dark .mermaid-modal-content svg .nodeLabel text,
+.dark .mermaid-modal-content svg .edgeLabel text {
+    fill: #f9fafb !important;
+    color: #f9fafb !important;
+}
+
+.dark .mermaid-modal-content {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.mermaid-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.25rem;
+    color: #111827;
+    z-index: 10;
+}
+
+.mermaid-zoom-controls {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+.mermaid-zoom-btn {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #111827;
+    transition: all 0.2s;
+}
+
+.mermaid-zoom-btn:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+.dark .mermaid-modal-close {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+.mermaid-modal-close:hover {
+    background: #e5e7eb;
+}
+
+.dark .mermaid-modal-close:hover {
+    background: #4b5563;
+}
+
+.dark .mermaid-zoom-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+.dark .mermaid-zoom-btn:hover {
+    background: #4b5563;
+}
+
+/* Mermaid diagram improvements */
+.mermaid {
+    text-align: center;
+    margin: 2rem 0;
+    background: transparent !important;
+}
+
+.mermaid svg {
+    max-width: 100% !important;
+    height: auto !important;
+    background: transparent !important;
+}
+
+/* Better spacing for Mermaid elements in dark mode */
+.dark .mermaid svg {
+    filter: none !important;
+}
+
+/* Improve text readability in Mermaid diagrams */
+.mermaid .node text,
+.mermaid .label text,
+.mermaid .actor text {
+    font-family: system-ui, -apple-system, sans-serif !important;
+    font-weight: 500 !important;
+}
+
+/* Force light text in dark mode for all SVG text elements */
+.dark .mermaid svg text {
+    fill: #f9fafb !important;
+    color: #f9fafb !important;
+}
+
+.dark .mermaid svg .node text,
+.dark .mermaid svg .label text,
+.dark .mermaid svg .nodeLabel text,
+.dark .mermaid svg .edgeLabel text {
+    fill: #f9fafb !important;
+    color: #f9fafb !important;
+    font-weight: 500 !important;
+}
+
+/* Force light lines in dark mode */
+.dark .mermaid svg path {
+    stroke: #d1d5db !important;
+}
+
+.dark .mermaid svg .flowchart-link {
+    stroke: #d1d5db !important;
+}
+
+.dark .mermaid svg .edgePath path {
+    stroke: #d1d5db !important;
+}
+
+/* Light mode text should be dark */
+.mermaid svg text {
+    fill: #111827 !important;
+    color: #111827 !important;
+}
+
+.mermaid svg .node text,
+.mermaid svg .label text,
+.mermaid svg .nodeLabel text,
+.mermaid svg .edgeLabel text {
+    fill: #111827 !important;
+    color: #111827 !important;
+    font-weight: 500 !important;
+}
+
+/* Reduce excessive line overlap */
+.mermaid .edgePath path {
+    stroke-width: 2px !important;
+}
+
+.mermaid .actor-line {
+    stroke-width: 2px !important;
+}
+
+/* Better spacing for C4 diagrams */
+.mermaid .c4Person,
+.mermaid .c4Container,
+.mermaid .c4Component {
+    margin: 8px !important;
+}
+
+/* Improve flowchart node spacing */
+.mermaid .node {
+    margin: 4px !important;
+}
+
+/* Category collapse/expand functionality - High specificity to override Tailwind */
+ul.adr-category-list.collapsed {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Alternative approach for smooth animation */
+ul.adr-category-list {
+    transition: all 0.3s ease;
+    overflow: hidden;
+    max-height: 1000px; /* Large enough to show all content */
+}
+
+ul.adr-category-list.collapsed {
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+.adr-category-header.collapsed .category-icon {
+    transform: rotate(-90deg);
+}
+
+.adr-category-header .category-icon {
+    transition: transform 0.2s ease;
+}
+
+/* Tailwind prose plugin handles all markdown styling automatically */
+
+/* Fix Prism.js code block styling to prevent "selected" appearance in dark mode */
+.prose pre[class*="language-"] {
+    background-color: #f6f8fa !important;
+    color: #24292e !important;
+}
+
+.dark .prose pre[class*="language-"] {
+    background-color: #0d1117 !important;
+    color: #e6edf3 !important;
+    border: 1px solid #30363d !important;
+}
+
+.prose code[class*="language-"] {
+    background-color: transparent !important;
+}
+
+/* Override any Prism token colors that might cause issues */
+.dark .prose .token.comment,
+.dark .prose .token.prolog,
+.dark .prose .token.doctype,
+.dark .prose .token.cdata {
+    color: #8b949e !important;
+}
+
+.dark .prose .token.punctuation {
+    color: #e6edf3 !important;
+}
+
+.dark .prose .token.property,
+.dark .prose .token.tag,
+.dark .prose .token.boolean,
+.dark .prose .token.number,
+.dark .prose .token.constant,
+.dark .prose .token.symbol,
+.dark .prose .token.deleted {
+    color: #79c0ff !important;
+}
+
+.dark .prose .token.selector,
+.dark .prose .token.attr-name,
+.dark .prose .token.string,
+.dark .prose .token.char,
+.dark .prose .token.builtin,
+.dark .prose .token.inserted {
+    color: #a5d6ff !important;
+}
+
+.dark .prose .token.operator,
+.dark .prose .token.entity,
+.dark .prose .token.url,
+.dark .prose .language-css .token.string,
+.dark .prose .style .token.string {
+    color: #ff7b72 !important;
+}
+
+.dark .prose .token.atrule,
+.dark .prose .token.attr-value,
+.dark .prose .token.keyword {
+    color: #ff7b72 !important;
+}
+
+.dark .prose .token.function,
+.dark .prose .token.class-name {
+    color: #d2a8ff !important;
+}
+
+.dark .prose .token.regex,
+.dark .prose .token.important,
+.dark .prose .token.variable {
+    color: #ffa657 !important;
+}

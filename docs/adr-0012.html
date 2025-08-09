@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>ADR-0012: Testing Framework Selection - Architecture Decision Records</title>
+    <meta name="description" content="Architecture Decision Records for modern software development">
+    
+    
+    <style>
+        @view-transition {
+            navigation: auto;
+        }
+        
+        .adr-content {
+            view-transition-name: adr-content;
+        }
+        
+        .sidebar {
+            view-transition-name: sidebar;
+        }
+        
+        .main-header {
+            view-transition-name: main-header;
+        }
+    </style>
+    
+    
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="site-title">
+                    <a href="/" class="home-link">
+                        <span class="icon">📋</span>
+                        Architecture Decisions
+                    </a>
+                </h1>
+            </div>
+            
+            
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search ADRs..." class="search-input">
+                <button id="search-clear" class="search-clear">×</button>
+            </div>
+            
+            
+            <div class="filter-container">
+                <select id="status-filter" class="status-filter">
+                    <option value="">All Status</option>
+                    <option value="Proposed">⏳ Proposed</option>
+                    <option value="Accepted">✅ Accepted</option>
+                    <option value="Deprecated">🗑️ Deprecated</option>
+                    <option value="Superseded">⬆️ Superseded</option>
+                </select>
+            </div>
+            
+            
+            <nav class="adr-nav">
+                
+                
+                
+                <div class="adr-category">
+                    <h3 class="adr-category-title">📄 General</h3>
+                    <ul class="adr-list adr-category-list">
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0001.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0001</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Record Architecture Decisions</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0001.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0001</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Record Architecture Decisions</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0001.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0001</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Record Architecture Decisions</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0001.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0001</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Record Architecture Decisions</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0001.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0001</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Record Architecture Decisions</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0002.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0002</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Establish Architecture Review Board</div>
+                                
+                                <div class="adr-diagram-indicator">Flowchart Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0002.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0002</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Establish Architecture Review Board</div>
+                                
+                                <div class="adr-diagram-indicator">Flowchart Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0002.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0002</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Establish Architecture Review Board</div>
+                                
+                                <div class="adr-diagram-indicator">Flowchart Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0002.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0002</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Establish Architecture Review Board</div>
+                                
+                                <div class="adr-diagram-indicator">Flowchart Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0002.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0002</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Establish Architecture Review Board</div>
+                                
+                                <div class="adr-diagram-indicator">Flowchart Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0011.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0011</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Test New ADR Creation</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0011.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0011</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Test New ADR Creation</div>
+                                
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </div>
+                
+                
+                
+                <div class="adr-category">
+                    <h3 class="adr-category-title">📁 data</h3>
+                    <ul class="adr-list adr-category-list">
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0013.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0013</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Database Migration Strategy</div>
+                                
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </div>
+                
+                
+                
+                <div class="adr-category">
+                    <h3 class="adr-category-title">📁 frontend</h3>
+                    <ul class="adr-list adr-category-list">
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0006.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0006</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Use Event-Driven Communication</div>
+                                
+                                <div class="adr-diagram-indicator">Sequence Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0006.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0006</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Use Event-Driven Communication</div>
+                                
+                                <div class="adr-diagram-indicator">Sequence Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0006.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0006</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Use Event-Driven Communication</div>
+                                
+                                <div class="adr-diagram-indicator">Sequence Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0006.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0006</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Use Event-Driven Communication</div>
+                                
+                                <div class="adr-diagram-indicator">Sequence Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0006.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0006</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Use Event-Driven Communication</div>
+                                
+                                <div class="adr-diagram-indicator">Sequence Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0007.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0007</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Implement GraphQL API</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0007.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0007</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Implement GraphQL API</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0007.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0007</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Implement GraphQL API</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0007.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0007</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Implement GraphQL API</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0007.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0007</span>
+                                    <span class="adr-status proposed">⏳</span>
+                                </div>
+                                <div class="adr-title">Implement GraphQL API</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0012.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0012</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Testing Framework Selection</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0012.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0012</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Testing Framework Selection</div>
+                                
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </div>
+                
+                
+                
+                <div class="adr-category">
+                    <h3 class="adr-category-title">📁 infrastructure</h3>
+                    <ul class="adr-list adr-category-list">
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0003.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0003</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Microservices Architecture</div>
+                                
+                                <div class="adr-diagram-indicator">Context Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0003.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0003</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Microservices Architecture</div>
+                                
+                                <div class="adr-diagram-indicator">Context Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0003.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0003</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Microservices Architecture</div>
+                                
+                                <div class="adr-diagram-indicator">Context Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0003.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0003</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Microservices Architecture</div>
+                                
+                                <div class="adr-diagram-indicator">Context Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0003.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0003</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Microservices Architecture</div>
+                                
+                                <div class="adr-diagram-indicator">Context Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0004.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0004</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Choose Database Per Service</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0004.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0004</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Choose Database Per Service</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0004.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0004</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Choose Database Per Service</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0004.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0004</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Choose Database Per Service</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0004.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0004</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Choose Database Per Service</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0008.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0008</span>
+                                    <span class="adr-status deprecated">🗑️</span>
+                                </div>
+                                <div class="adr-title">Use MongoDB for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0008.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0008</span>
+                                    <span class="adr-status deprecated">🗑️</span>
+                                </div>
+                                <div class="adr-title">Use MongoDB for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0008.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0008</span>
+                                    <span class="adr-status deprecated">🗑️</span>
+                                </div>
+                                <div class="adr-title">Use MongoDB for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0008.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0008</span>
+                                    <span class="adr-status deprecated">🗑️</span>
+                                </div>
+                                <div class="adr-title">Use MongoDB for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0008.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0008</span>
+                                    <span class="adr-status deprecated">🗑️</span>
+                                </div>
+                                <div class="adr-title">Use MongoDB for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0009.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0009</span>
+                                    <span class="adr-status superseded">⬆️</span>
+                                </div>
+                                <div class="adr-title">Use Redis for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0009.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0009</span>
+                                    <span class="adr-status superseded">⬆️</span>
+                                </div>
+                                <div class="adr-title">Use Redis for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0009.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0009</span>
+                                    <span class="adr-status superseded">⬆️</span>
+                                </div>
+                                <div class="adr-title">Use Redis for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0009.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0009</span>
+                                    <span class="adr-status superseded">⬆️</span>
+                                </div>
+                                <div class="adr-title">Use Redis for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0009.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0009</span>
+                                    <span class="adr-status superseded">⬆️</span>
+                                </div>
+                                <div class="adr-title">Use Redis for Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Container Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0010.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0010</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Hybrid Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0010.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0010</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Hybrid Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0010.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0010</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Hybrid Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0010.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0010</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Hybrid Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0010.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0010</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Adopt Hybrid Session Storage</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </div>
+                
+                
+                
+                <div class="adr-category">
+                    <h3 class="adr-category-title">📁 security</h3>
+                    <ul class="adr-list adr-category-list">
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0005.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0005</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Implement API Gateway Pattern</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0005.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0005</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Implement API Gateway Pattern</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0005.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0005</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Implement API Gateway Pattern</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0005.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0005</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Implement API Gateway Pattern</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                        <li class="adr-item">
+                            <a href="/adr-0005.html" class="adr-link">
+                                <div class="adr-header">
+                                    <span class="adr-number">0005</span>
+                                    <span class="adr-status accepted">✅</span>
+                                </div>
+                                <div class="adr-title">Implement API Gateway Pattern</div>
+                                
+                                <div class="adr-diagram-indicator">Component Diagram</div>
+                                
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </div>
+                
+                
+            </nav>
+            
+            
+            <div class="sidebar-footer">
+                <p class="project-info">ADR Demo</p>
+                <a href="https://github.com/euforicio/adr-demo" class="footer-link">🔗 GitHub</a>
+            </div>
+        </aside>
+        
+        
+        <main class="main-content">
+            <header class="main-header">
+                <div class="breadcrumb">
+                    <a href="/" class="breadcrumb-home">Architecture Decisions</a>
+                    
+                        
+
+<span class="breadcrumb-separator">›</span>
+<span class="breadcrumb-category">📁 frontend</span>
+
+<span class="breadcrumb-separator">›</span>
+<span class="breadcrumb-current">ADR-0012: Testing Framework Selection</span>
+
+                    
+                </div>
+                <div class="content-actions">
+                    
+<button class="action-btn" onclick="window.print()" title="Print page">
+    🖨️
+</button>
+
+                </div>
+            </header>
+            
+            <div class="adr-content">
+                
+<div class="search-page">
+    <div class="search-page-header">
+        <h1>🔍 Search ADRs</h1>
+        <p>Find Architecture Decision Records by title, content, or status</p>
+    </div>
+    
+    <div class="search-controls">
+        <div class="search-input-container">
+            <input type="text" id="search-query" placeholder="Search for ADRs..." class="search-input-large">
+            <button id="search-button" class="search-button">Search</button>
+        </div>
+        
+        <div class="search-filters">
+            <select id="search-status-filter" class="search-filter">
+                <option value="">All Status</option>
+                <option value="Proposed">⏳ Proposed</option>
+                <option value="Accepted">✅ Accepted</option>
+                <option value="Deprecated">🗑️ Deprecated</option>
+                <option value="Superseded">⬆️ Superseded</option>
+            </select>
+            
+            <select id="search-diagram-filter" class="search-filter">
+                <option value="">All Diagrams</option>
+                <option value="Context">Context Diagrams</option>
+                <option value="Container">Container Diagrams</option>
+                <option value="Component">Component Diagrams</option>
+                <option value="Sequence">Sequence Diagrams</option>
+                <option value="State">State Diagrams</option>
+                <option value="Flowchart">Flowcharts</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="search-results">
+        <div id="search-stats" class="search-stats" style="display: none;">
+            <span id="results-count">0</span> results found
+        </div>
+        
+        <div id="search-results-list" class="search-results-list">
+            
+        </div>
+        
+        <div id="no-results" class="no-results" style="display: none;">
+            <div class="no-results-content">
+                <span class="no-results-icon">🔍</span>
+                <h3>No results found</h3>
+                <p>Try adjusting your search terms or filters</p>
+            </div>
+        </div>
+        
+        <div id="search-help" class="search-help">
+            <h3>Search Tips</h3>
+            <ul>
+                <li>Search by ADR number (e.g., "0001" or "ADR-0001")</li>
+                <li>Look for specific technologies (e.g., "Redis", "GraphQL")</li>
+                <li>Find decisions by status or diagram type using filters</li>
+                <li>Use quotes for exact phrases (e.g., "API Gateway")</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+let searchIndex = [];
+
+
+fetch('/search-index.json')
+    .then(response => response.json())
+    .then(data => {
+        searchIndex = data.items || [];
+        setupSearch();
+    })
+    .catch(error => {
+        console.error('Failed to load search index:', error);
+    });
+
+function setupSearch() {
+    const searchInput = document.getElementById('search-query');
+    const searchButton = document.getElementById('search-button');
+    const statusFilter = document.getElementById('search-status-filter');
+    const diagramFilter = document.getElementById('search-diagram-filter');
+    
+    
+    function performSearch() {
+        const query = searchInput.value.trim();
+        const status = statusFilter.value;
+        const diagramType = diagramFilter.value;
+        
+        const results = searchADRs(query, status, diagramType);
+        displayResults(results, query);
+    }
+    
+    searchInput.addEventListener('input', debounce(performSearch, 300));
+    searchButton.addEventListener('click', performSearch);
+    statusFilter.addEventListener('change', performSearch);
+    diagramFilter.addEventListener('change', performSearch);
+    
+    
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+    
+    
+    searchInput.focus();
+    
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlQuery = urlParams.get('q');
+    if (urlQuery) {
+        searchInput.value = urlQuery;
+        performSearch();
+    }
+}
+
+function searchADRs(query, status, diagramType) {
+    if (!query && !status && !diagramType) {
+        return [];
+    }
+    
+    const queryLower = query.toLowerCase();
+    
+    return searchIndex.filter(item => {
+        
+        if (status && item.status !== status) {
+            return false;
+        }
+        
+        
+        if (diagramType && item.diagramType !== diagramType) {
+            return false;
+        }
+        
+        
+        if (query) {
+            const searchText = `${item.number} ${item.title} ${item.content}`.toLowerCase();
+            
+            
+            if (query.startsWith('"') && query.endsWith('"')) {
+                const phrase = query.slice(1, -1).toLowerCase();
+                return searchText.includes(phrase);
+            }
+            
+            
+            const keywords = queryLower.split(' ').filter(k => k.length > 0);
+            return keywords.every(keyword => searchText.includes(keyword));
+        }
+        
+        return true;
+    });
+}
+
+function displayResults(results, query) {
+    const statsEl = document.getElementById('search-stats');
+    const resultsEl = document.getElementById('search-results-list');
+    const noResultsEl = document.getElementById('no-results');
+    const helpEl = document.getElementById('search-help');
+    const countEl = document.getElementById('results-count');
+    
+    if (results.length === 0) {
+        statsEl.style.display = 'none';
+        resultsEl.innerHTML = '';
+        noResultsEl.style.display = 'block';
+        helpEl.style.display = query ? 'none' : 'block';
+        return;
+    }
+    
+    countEl.textContent = results.length;
+    statsEl.style.display = 'block';
+    noResultsEl.style.display = 'none';
+    helpEl.style.display = 'none';
+    
+    resultsEl.innerHTML = results.map(item => `
+        <div class="search-result">
+            <div class="search-result-header">
+                <span class="search-result-number">ADR-${item.number}</span>
+                <span class="search-result-status status-badge ${getStatusClass(item.status)}">
+                    ${getStatusEmoji(item.status)} ${item.status}
+                </span>
+                ${item.diagramType !== '-' ? `<span class="search-result-diagram">${item.diagramType}</span>` : ''}
+            </div>
+            <h3 class="search-result-title">
+                <a href="/adr-${item.number}.html">${highlightText(item.title, query)}</a>
+            </h3>
+            <p class="search-result-content">
+                ${highlightText(truncateText(item.content, 200), query)}
+            </p>
+        </div>
+    `).join('');
+}
+
+function highlightText(text, query) {
+    if (!query) return text;
+    
+    const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substr(0, maxLength) + '...';
+}
+
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getStatusClass(status) {
+    return status.toLowerCase();
+}
+
+function getStatusEmoji(status) {
+    const emojis = {
+        'Accepted': '✅',
+        'Proposed': '⏳',
+        'Deprecated': '🗑️',
+        'Superseded': '⬆️'
+    };
+    return emojis[status] || '❓';
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+
+            </div>
+        </main>
+    </div>
+    
+    
+    <script src="/static/js/main.js"></script>
+    
+    
+    
+    
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            sequence: {
+                useMaxWidth: true
+            },
+            c4: {
+                useMaxWidth: true
+            }
+        });
+        
+        
+        function openMermaidFullscreen(diagramId) {
+            const diagram = document.getElementById(diagramId);
+            const svg = diagram.querySelector('svg');
+            if (svg) {
+                const modal = document.createElement('div');
+                modal.className = 'mermaid-modal';
+                modal.innerHTML = `
+                    <div class="mermaid-modal-content">
+                        <button class="mermaid-modal-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                        ${svg.outerHTML}
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+        }
+        
+        function copyMermaidCode(diagramId) {
+            const diagram = document.getElementById(diagramId);
+            const code = diagram.getAttribute('data-diagram');
+            if (code && navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => {
+                    console.log('Diagram code copied to clipboard');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="view-transition" content="same-origin">
+    <title>ADR-0005: Implement API Gateway Pattern - Architecture Decision Records</title>
+    <meta name="description" content="Architecture Decision Records for modern software development">
+    
+    
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            },
+            plugins: [
+                
+                function({ addUtilities }) {
+                    const newUtilities = {
+                        '.prose': {
+                            'color': '#374151',
+                            'max-width': '65ch',
+                            'line-height': '1.75',
+                        },
+                        '.prose h1': {
+                            'color': '#111827',
+                            'font-weight': '700',
+                            'font-size': '2.25rem',
+                            'line-height': '2.5rem',
+                            'margin-top': '0',
+                            'margin-bottom': '1rem',
+                        },
+                        '.prose h2, .prose h3, .prose h4, .prose h5, .prose h6': {
+                            'color': '#111827',
+                            'font-weight': '600',
+                        },
+                        '.prose p': {
+                            'margin-top': '1.25em',
+                            'margin-bottom': '1.25em',
+                        },
+                        '.prose table': {
+                            'width': '100%',
+                            'table-layout': 'auto',
+                            'text-align': 'left',
+                            'margin-top': '2em',
+                            'margin-bottom': '2em',
+                            'font-size': '0.875em',
+                            'line-height': '1.7142857',
+                        },
+                        '.prose thead': {
+                            'border-bottom-width': '1px',
+                            'border-bottom-color': '#d1d5db',
+                        },
+                        '.prose thead th': {
+                            'color': '#111827',
+                            'font-weight': '600',
+                            'vertical-align': 'bottom',
+                            'padding-right': '0.5714286em',
+                            'padding-bottom': '0.5714286em',
+                            'padding-left': '0.5714286em',
+                        },
+                        '.prose tbody tr': {
+                            'border-bottom-width': '1px',
+                            'border-bottom-color': '#e5e7eb',
+                        },
+                        '.prose tbody td': {
+                            'vertical-align': 'baseline',
+                            'padding-top': '0.5714286em',
+                            'padding-right': '0.5714286em',
+                            'padding-bottom': '0.5714286em',
+                            'padding-left': '0.5714286em',
+                        },
+                        '.prose ul, .prose ol': {
+                            'margin-top': '1.25em',
+                            'margin-bottom': '1.25em',
+                            'padding-left': '1.625em',
+                        },
+                        '.prose li': {
+                            'margin-top': '0.5em',
+                            'margin-bottom': '0.5em',
+                        },
+                        '.prose blockquote': {
+                            'font-weight': '500',
+                            'font-style': 'italic',
+                            'color': '#111827',
+                            'border-left-width': '0.25rem',
+                            'border-left-color': '#e5e7eb',
+                            'quotes': '"\\201C""\\201D""\\2018""\\2019"',
+                            'margin-top': '1.6em',
+                            'margin-bottom': '1.6em',
+                            'padding-left': '1em',
+                        },
+                        '.prose code': {
+                            'color': '#111827',
+                            'font-weight': '600',
+                            'font-size': '0.875em',
+                            'background-color': '#f3f4f6',
+                            'padding': '0.2em 0.4em',
+                            'border-radius': '0.25rem',
+                        },
+                        '.prose pre': {
+                            'color': '#374151',
+                            'background-color': '#f6f8fa',
+                            'overflow-x': 'auto',
+                            'font-weight': '400',
+                            'font-size': '0.875em',
+                            'line-height': '1.7142857',
+                            'margin-top': '1.7142857em',
+                            'margin-bottom': '1.7142857em',
+                            'border-radius': '0.375rem',
+                            'padding-top': '0.8571429em',
+                            'padding-right': '1.1428571em',
+                            'padding-bottom': '0.8571429em',
+                            'padding-left': '1.1428571em',
+                        },
+                        '.prose pre code': {
+                            'background-color': 'transparent',
+                            'border-width': '0',
+                            'border-radius': '0',
+                            'padding': '0',
+                            'font-weight': 'inherit',
+                            'color': 'inherit',
+                            'font-size': 'inherit',
+                            'font-family': 'inherit',
+                            'line-height': 'inherit',
+                        },
+                        
+                        '.dark .prose': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose h1': {
+                            'color': '#f9fafb',
+                        },
+                        '.dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6': {
+                            'color': '#f9fafb',
+                        },
+                        '.dark .prose thead': {
+                            'border-bottom-color': '#4b5563',
+                        },
+                        '.dark .prose thead th': {
+                            'color': '#f9fafb',
+                        },
+                        '.dark .prose tbody tr': {
+                            'border-bottom-color': '#374151',
+                        },
+                        '.dark .prose tbody td': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose blockquote': {
+                            'color': '#d1d5db',
+                            'border-left-color': '#4b5563',
+                        },
+                        '.dark .prose code': {
+                            'color': '#f9fafb',
+                            'background-color': '#374151',
+                        },
+                        '.dark .prose pre': {
+                            'color': '#e5e7eb',
+                            'background-color': '#0d1117',
+                            'border': '1px solid #30363d',
+                        },
+                        '.dark .prose table': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose p': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose ul, .dark .prose ol': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose li': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose strong': {
+                            'color': '#f9fafb',
+                        },
+                        '.dark .prose em': {
+                            'color': '#d1d5db',
+                        },
+                        '.dark .prose a': {
+                            'color': '#60a5fa',
+                        },
+                        '.dark .prose a:hover': {
+                            'color': '#93c5fd',
+                        },
+                    }
+                    addUtilities(newUtilities)
+                }
+            ]
+        }
+    </script>
+    
+    
+    <link rel="stylesheet" href="/adr-demo/static/css/main.css?v=20241203-final">
+    
+    
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-github.min.css" rel="stylesheet">
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    
+    
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        
+        <aside class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col fixed h-screen overflow-y-auto z-50">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between">
+                <h1 class="text-lg font-semibold">
+                    <a href="/adr-demo/" class="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                        <span class="text-lg">📋</span>
+                        Architecture Decisions
+                    </a>
+                </h1>
+                
+                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Toggle theme">
+                    <span class="dark:hidden">🌙</span>
+                    <span class="hidden dark:inline">☀️</span>
+                </button>
+            </div>
+            
+            
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 relative">
+                <input type="text" id="search-input" placeholder="Search ADRs..." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <button id="search-clear" class="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-lg px-1">×</button>
+            </div>
+            
+            
+            <div class="px-4 pb-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
+                <select id="status-filter" class="w-full px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Status</option>
+                    <option value="Proposed">⏳ Proposed</option>
+                    <option value="Accepted">✅ Accepted</option>
+                    <option value="Deprecated">🗑️ Deprecated</option>
+                    <option value="Superseded">⬆️ Superseded</option>
+                </select>
+                
+                
+                <div class="flex rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
+                    <button id="view-grouped" class="flex-1 px-3 py-1 text-xs font-medium rounded-md transition-colors bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm" title="Group by category">
+                        📁 Grouped
+                    </button>
+                    <button id="view-flat" class="flex-1 px-3 py-1 text-xs font-medium rounded-md transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100" title="List by number">
+                        📄 List
+                    </button>
+                </div>
+            </div>
+            
+            
+            <nav class="flex-1 overflow-y-auto">
+                
+                <div id="adr-list-grouped">
+                    
+                    
+                    <div class="border-b border-gray-100 dark:border-gray-700">
+                        <button class="adr-category-header w-full px-4 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" onclick="toggleCategory('category-436f726520417263686974656374757265')">
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Core Architecture</span>
+                            <span class="category-icon text-xs text-gray-500 dark:text-gray-400">▼</span>
+                        </button>
+                        <ul class="adr-category-list bg-gray-50 dark:bg-gray-800" id="category-436f726520417263686974656374757265">
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0003.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Adopt Microservices Architecture</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0003</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0011.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✗</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use Synchronous Service Calls</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0011</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                        </ul>
+                    </div>
+                    
+                    <div class="border-b border-gray-100 dark:border-gray-700">
+                        <button class="adr-category-header w-full px-4 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" onclick="toggleCategory('category-44617461204d616e6167656d656e74')">
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Data Management</span>
+                            <span class="category-icon text-xs text-gray-500 dark:text-gray-400">▼</span>
+                        </button>
+                        <ul class="adr-category-list bg-gray-50 dark:bg-gray-800" id="category-44617461204d616e6167656d656e74">
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0004.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Choose Database Per Service</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0004</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                        </ul>
+                    </div>
+                    
+                    <div class="border-b border-gray-100 dark:border-gray-700">
+                        <button class="adr-category-header w-full px-4 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" onclick="toggleCategory('category-46726f6e74656e6420446576656c6f706d656e74')">
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Frontend Development</span>
+                            <span class="category-icon text-xs text-gray-500 dark:text-gray-400">▼</span>
+                        </button>
+                        <ul class="adr-category-list bg-gray-50 dark:bg-gray-800" id="category-46726f6e74656e6420446576656c6f706d656e74">
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0007.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">●</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Implement GraphQL API</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0007</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                        </ul>
+                    </div>
+                    
+                    <div class="border-b border-gray-100 dark:border-gray-700">
+                        <button class="adr-category-header w-full px-4 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" onclick="toggleCategory('category-47656e6572616c')">
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">General</span>
+                            <span class="category-icon text-xs text-gray-500 dark:text-gray-400">▼</span>
+                        </button>
+                        <ul class="adr-category-list bg-gray-50 dark:bg-gray-800" id="category-47656e6572616c">
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0001.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Record Architecture Decisions</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0001</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0002.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Establish Architecture Review Board</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0002</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0005.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Implement API Gateway Pattern</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0005</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0006.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use Event-Driven Communication</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0006</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0008.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">↑</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use MongoDB for Session Storage</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0008</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0009.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">↑</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use Redis for Session Storage</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0009</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                            <li>
+                                <a href="/adr-demo/adr-0010.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <div class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                        <span class="text-white text-xs font-semibold">✓</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Adopt Hybrid Session Storage</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">ADR-0010</div>
+                                    </div>
+                                </a>
+                            </li>
+                            
+                        </ul>
+                    </div>
+                    
+                </div>
+                
+                
+                <div id="adr-list-flat" class="hidden">
+                    <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0001.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0001</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Record Architecture Decisions</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0002.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0002</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Establish Architecture Review Board</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0003.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0003</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Adopt Microservices Architecture</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• Core Architecture</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0004.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0004</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Choose Database Per Service</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• Data Management</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0005.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0005</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Implement API Gateway Pattern</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0006.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0006</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use Event-Driven Communication</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0007.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0007</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Implement GraphQL API</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                            ● Proposed
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• Frontend Development</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0008.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0008</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use MongoDB for Session Storage</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                            ↑ Superseded
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0009.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0009</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use Redis for Session Storage</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                            ↑ Superseded
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0010.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0010</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Adopt Hybrid Session Storage</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            ✓ Accepted
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• General</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                        <li>
+                            <a href="/adr-demo/adr-0011.html" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-blue-600 dark:text-blue-400 text-xs font-bold font-mono">0011</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-5">Use Synchronous Service Calls</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                            ✗ Deprecated
+                                        </span>
+                                        
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">• Core Architecture</span>
+                                        
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </nav>
+            
+            
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-center">
+                <a href="/adr-demo/docs" class="block w-full mb-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 text-center">
+                    📖 Documentation
+                </a>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">ADR Demo</p>
+                <a href="https://github.com/euforicio/adr-demo" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">🔗 GitHub</a>
+            </div>
+        </aside>
+        
+        
+        <main class="flex-1 ml-80 flex flex-col min-h-screen">
+            <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-8 py-6 sticky top-0 z-10 flex justify-between items-center">
+                <div class="flex items-center gap-2 text-sm">
+                    <a href="/adr-demo/" class="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Architecture Decisions</a>
+                    
+
+<span class="text-gray-400 dark:text-gray-500 mx-2">›</span>
+<span class="text-gray-600 dark:text-gray-300">📁 General</span>
+
+<span class="text-gray-400 dark:text-gray-500 mx-2">›</span>
+<span class="text-gray-900 dark:text-gray-100 font-medium">ADR-0005: Implement API Gateway Pattern</span>
+
+                </div>
+                <div class="flex gap-2">
+                    
+<button class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:-translate-y-0.5 transition-all duration-200" onclick="window.print()" title="Print ADR">
+    🖨️
+</button>
+<button class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:-translate-y-0.5 transition-all duration-200" onclick="toggleFullscreen()" title="Toggle fullscreen">
+    ⛶
+</button>
+
+                </div>
+            </header>
+            
+            <div class="flex-1 p-8 bg-white dark:bg-gray-900">
+                
+<article class="max-w-4xl mx-auto">
+    
+    <header class="mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <span class="text-4xl font-bold text-blue-600 dark:text-blue-400 font-mono">ADR-0005</span>
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    ✓ Accepted
+                </span>
+                
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Component Diagram</span>
+                
+            </div>
+        </div>
+    </header>
+    
+    
+    <div class="flex gap-8">
+        
+        <nav class="hidden lg:block w-64 flex-shrink-0" id="toc" style="display: none;">
+            <div class="sticky top-24">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contents</h3>
+                <ul id="toc-list" class="space-y-2 text-sm"></ul>
+            </div>
+        </nav>
+        
+        
+        <div class="flex-1 min-w-0">
+            <div class="prose max-w-none">
+                <h1 id="implement-api-gateway-pattern">Implement API Gateway Pattern</h1>
+<h2 id="status">Status</h2>
+<p>Accepted</p>
+<h2 id="context">Context</h2>
+<p>With our microservices architecture (<a href="/adr-demo/adr-0003.html">ADR-0003: Adopt Microservices Architecture</a>), we now have multiple services that need to be accessed by various client applications (web, mobile, admin portal). Without a unified entry point, we face several challenges:</p>
+<p><strong>Current Client-Service Communication Issues:</strong></p>
+<ul>
+<li>Clients need to know about and connect to multiple service endpoints</li>
+<li>Cross-cutting concerns (authentication, rate limiting, logging) duplicated across services</li>
+<li>Different protocols and data formats across services create client complexity</li>
+<li>CORS configuration needed on every service for browser clients</li>
+<li>No centralized point for API versioning and documentation</li>
+<li>Difficult to implement security policies consistently</li>
+<li>Load balancing and failover logic scattered across clients</li>
+</ul>
+<p><strong>Requirements:</strong></p>
+<ul>
+<li>Single entry point for all external API access</li>
+<li>Centralized authentication and authorization</li>
+<li>Rate limiting and throttling capabilities</li>
+<li>Request/response transformation and protocol translation</li>
+<li>Load balancing and service discovery integration</li>
+<li>Comprehensive logging and monitoring</li>
+<li>API versioning and backward compatibility support</li>
+</ul>
+<p>We evaluated three approaches:</p>
+<ol>
+<li><strong>No Gateway</strong>: Clients communicate directly with services</li>
+<li><strong>API Gateway</strong>: Single entry point routing to backend services</li>
+<li><strong>Backend for Frontend (BFF)</strong>: Separate gateways per client type</li>
+</ol>
+<h2 id="decision">Decision</h2>
+<p>We will implement an API Gateway pattern using Kong as our gateway technology, providing a single entry point for all client-to-service communication.</p>
+<h3 id="api-gateway-architecture">API Gateway Architecture</h3>
+
+<div class="mermaid-container" id="mermaid-1">
+	<div class="mermaid-toolbar">
+		<button class="mermaid-fullscreen" onclick="openMermaidFullscreen('mermaid-1')" title="View fullscreen">
+			⛶
+		</button>
+		<button class="mermaid-copy" onclick="copyMermaidCode('mermaid-1')" title="Copy diagram code">
+			📋
+		</button>
+	</div>
+	<div class="mermaid-diagram" data-diagram="C4Component
+    title Component Diagram - API Gateway Architecture
+    
+    Component_Ext(webClient, &amp;quot;Web Client&amp;quot;, &amp;quot;React SPA&amp;quot;, &amp;quot;Customer web interface&amp;quot;)
+    Component_Ext(mobileClient, &amp;quot;Mobile Client&amp;quot;, &amp;quot;React Native&amp;quot;, &amp;quot;Customer mobile app&amp;quot;)
+    Component_Ext(adminClient, &amp;quot;Admin Client&amp;quot;, &amp;quot;React&amp;quot;, &amp;quot;Administrative portal&amp;quot;)
+    
+    Container_Boundary(gateway, &amp;quot;API Gateway&amp;quot;) {
+        Component(loadBalancer, &amp;quot;Load Balancer&amp;quot;, &amp;quot;Kong Ingress&amp;quot;, &amp;quot;Request distribution&amp;quot;)
+        Component(authPlugin, &amp;quot;Auth Plugin&amp;quot;, &amp;quot;Kong JWT&amp;quot;, &amp;quot;Authentication &amp;amp; authorization&amp;quot;)
+        Component(rateLimitPlugin, &amp;quot;Rate Limit Plugin&amp;quot;, &amp;quot;Kong Rate Limiting&amp;quot;, &amp;quot;Request throttling&amp;quot;)
+        Component(loggingPlugin, &amp;quot;Logging Plugin&amp;quot;, &amp;quot;Kong Logging&amp;quot;, &amp;quot;Request/response logging&amp;quot;)
+        Component(corsPlugin, &amp;quot;CORS Plugin&amp;quot;, &amp;quot;Kong CORS&amp;quot;, &amp;quot;Cross-origin requests&amp;quot;)
+        Component(transformPlugin, &amp;quot;Transform Plugin&amp;quot;, &amp;quot;Kong Request/Response&amp;quot;, &amp;quot;Data transformation&amp;quot;)
+        Component(router, &amp;quot;Request Router&amp;quot;, &amp;quot;Kong Routing&amp;quot;, &amp;quot;Service routing logic&amp;quot;)
+        Component(circuitBreaker, &amp;quot;Circuit Breaker&amp;quot;, &amp;quot;Kong Health Check&amp;quot;, &amp;quot;Fault tolerance&amp;quot;)
+    }
+    
+    Component_Ext(userService, &amp;quot;User Service&amp;quot;, &amp;quot;Node.js&amp;quot;, &amp;quot;Authentication &amp;amp; profiles&amp;quot;)
+    Component_Ext(catalogService, &amp;quot;Catalog Service&amp;quot;, &amp;quot;Python&amp;quot;, &amp;quot;Product information&amp;quot;)
+    Component_Ext(inventoryService, &amp;quot;Inventory Service&amp;quot;, &amp;quot;Java&amp;quot;, &amp;quot;Stock management&amp;quot;)
+    Component_Ext(cartService, &amp;quot;Cart Service&amp;quot;, &amp;quot;Node.js&amp;quot;, &amp;quot;Shopping cart&amp;quot;)
+    Component_Ext(orderService, &amp;quot;Order Service&amp;quot;, &amp;quot;Java&amp;quot;, &amp;quot;Order processing&amp;quot;)
+    Component_Ext(paymentService, &amp;quot;Payment Service&amp;quot;, &amp;quot;Java&amp;quot;, &amp;quot;Payment processing&amp;quot;)
+    Component_Ext(shippingService, &amp;quot;Shipping Service&amp;quot;, &amp;quot;Python&amp;quot;, &amp;quot;Delivery management&amp;quot;)
+    Component_Ext(notificationService, &amp;quot;Notification Service&amp;quot;, &amp;quot;Go&amp;quot;, &amp;quot;Messaging&amp;quot;)
+    
+    Component_Ext(monitoring, &amp;quot;Monitoring&amp;quot;, &amp;quot;Prometheus/Grafana&amp;quot;, &amp;quot;Metrics &amp;amp; alerting&amp;quot;)
+    Component_Ext(logging, &amp;quot;Log Aggregation&amp;quot;, &amp;quot;ELK Stack&amp;quot;, &amp;quot;Centralized logging&amp;quot;)
+    
+    Rel(webClient, loadBalancer, &amp;quot;HTTPS API calls&amp;quot;)
+    Rel(mobileClient, loadBalancer, &amp;quot;HTTPS API calls&amp;quot;)
+    Rel(adminClient, loadBalancer, &amp;quot;HTTPS API calls&amp;quot;)
+    
+    Rel(loadBalancer, authPlugin, &amp;quot;Request flow&amp;quot;)
+    Rel(authPlugin, rateLimitPlugin, &amp;quot;Authenticated requests&amp;quot;)
+    Rel(rateLimitPlugin, corsPlugin, &amp;quot;Rate-limited requests&amp;quot;)
+    Rel(corsPlugin, transformPlugin, &amp;quot;CORS-handled requests&amp;quot;)
+    Rel(transformPlugin, router, &amp;quot;Transformed requests&amp;quot;)
+    Rel(router, circuitBreaker, &amp;quot;Routed requests&amp;quot;)
+    
+    Rel(circuitBreaker, userService, &amp;quot;User API calls&amp;quot;)
+    Rel(circuitBreaker, catalogService, &amp;quot;Catalog API calls&amp;quot;)
+    Rel(circuitBreaker, inventoryService, &amp;quot;Inventory API calls&amp;quot;)
+    Rel(circuitBreaker, cartService, &amp;quot;Cart API calls&amp;quot;)
+    Rel(circuitBreaker, orderService, &amp;quot;Order API calls&amp;quot;)
+    Rel(circuitBreaker, paymentService, &amp;quot;Payment API calls&amp;quot;)
+    Rel(circuitBreaker, shippingService, &amp;quot;Shipping API calls&amp;quot;)
+    Rel(circuitBreaker, notificationService, &amp;quot;Notification API calls&amp;quot;)
+    
+    Rel(loggingPlugin, logging, &amp;quot;Request logs&amp;quot;)
+    Rel(loggingPlugin, monitoring, &amp;quot;Metrics data&amp;quot;)
+" onclick="openMermaidFullscreen('mermaid-1')" style="cursor: pointer;" title="Click to view fullscreen">
+		<div class="mermaid">C4Component
+    title Component Diagram - API Gateway Architecture
+    
+    Component_Ext(webClient, &quot;Web Client&quot;, &quot;React SPA&quot;, &quot;Customer web interface&quot;)
+    Component_Ext(mobileClient, &quot;Mobile Client&quot;, &quot;React Native&quot;, &quot;Customer mobile app&quot;)
+    Component_Ext(adminClient, &quot;Admin Client&quot;, &quot;React&quot;, &quot;Administrative portal&quot;)
+    
+    Container_Boundary(gateway, &quot;API Gateway&quot;) {
+        Component(loadBalancer, &quot;Load Balancer&quot;, &quot;Kong Ingress&quot;, &quot;Request distribution&quot;)
+        Component(authPlugin, &quot;Auth Plugin&quot;, &quot;Kong JWT&quot;, &quot;Authentication &amp; authorization&quot;)
+        Component(rateLimitPlugin, &quot;Rate Limit Plugin&quot;, &quot;Kong Rate Limiting&quot;, &quot;Request throttling&quot;)
+        Component(loggingPlugin, &quot;Logging Plugin&quot;, &quot;Kong Logging&quot;, &quot;Request/response logging&quot;)
+        Component(corsPlugin, &quot;CORS Plugin&quot;, &quot;Kong CORS&quot;, &quot;Cross-origin requests&quot;)
+        Component(transformPlugin, &quot;Transform Plugin&quot;, &quot;Kong Request/Response&quot;, &quot;Data transformation&quot;)
+        Component(router, &quot;Request Router&quot;, &quot;Kong Routing&quot;, &quot;Service routing logic&quot;)
+        Component(circuitBreaker, &quot;Circuit Breaker&quot;, &quot;Kong Health Check&quot;, &quot;Fault tolerance&quot;)
+    }
+    
+    Component_Ext(userService, &quot;User Service&quot;, &quot;Node.js&quot;, &quot;Authentication &amp; profiles&quot;)
+    Component_Ext(catalogService, &quot;Catalog Service&quot;, &quot;Python&quot;, &quot;Product information&quot;)
+    Component_Ext(inventoryService, &quot;Inventory Service&quot;, &quot;Java&quot;, &quot;Stock management&quot;)
+    Component_Ext(cartService, &quot;Cart Service&quot;, &quot;Node.js&quot;, &quot;Shopping cart&quot;)
+    Component_Ext(orderService, &quot;Order Service&quot;, &quot;Java&quot;, &quot;Order processing&quot;)
+    Component_Ext(paymentService, &quot;Payment Service&quot;, &quot;Java&quot;, &quot;Payment processing&quot;)
+    Component_Ext(shippingService, &quot;Shipping Service&quot;, &quot;Python&quot;, &quot;Delivery management&quot;)
+    Component_Ext(notificationService, &quot;Notification Service&quot;, &quot;Go&quot;, &quot;Messaging&quot;)
+    
+    Component_Ext(monitoring, &quot;Monitoring&quot;, &quot;Prometheus/Grafana&quot;, &quot;Metrics &amp; alerting&quot;)
+    Component_Ext(logging, &quot;Log Aggregation&quot;, &quot;ELK Stack&quot;, &quot;Centralized logging&quot;)
+    
+    Rel(webClient, loadBalancer, &quot;HTTPS API calls&quot;)
+    Rel(mobileClient, loadBalancer, &quot;HTTPS API calls&quot;)
+    Rel(adminClient, loadBalancer, &quot;HTTPS API calls&quot;)
+    
+    Rel(loadBalancer, authPlugin, &quot;Request flow&quot;)
+    Rel(authPlugin, rateLimitPlugin, &quot;Authenticated requests&quot;)
+    Rel(rateLimitPlugin, corsPlugin, &quot;Rate-limited requests&quot;)
+    Rel(corsPlugin, transformPlugin, &quot;CORS-handled requests&quot;)
+    Rel(transformPlugin, router, &quot;Transformed requests&quot;)
+    Rel(router, circuitBreaker, &quot;Routed requests&quot;)
+    
+    Rel(circuitBreaker, userService, &quot;User API calls&quot;)
+    Rel(circuitBreaker, catalogService, &quot;Catalog API calls&quot;)
+    Rel(circuitBreaker, inventoryService, &quot;Inventory API calls&quot;)
+    Rel(circuitBreaker, cartService, &quot;Cart API calls&quot;)
+    Rel(circuitBreaker, orderService, &quot;Order API calls&quot;)
+    Rel(circuitBreaker, paymentService, &quot;Payment API calls&quot;)
+    Rel(circuitBreaker, shippingService, &quot;Shipping API calls&quot;)
+    Rel(circuitBreaker, notificationService, &quot;Notification API calls&quot;)
+    
+    Rel(loggingPlugin, logging, &quot;Request logs&quot;)
+    Rel(loggingPlugin, monitoring, &quot;Metrics data&quot;)
+</div>
+	</div>
+</div>
+<h3 id="gateway-responsibilities">Gateway Responsibilities</h3>
+<p><strong>Routing &amp; Load Balancing:</strong></p>
+<ul>
+<li>Route requests to appropriate backend services</li>
+<li>Load balance requests across service instances</li>
+<li>Health checking and automatic failover</li>
+<li>Service discovery integration</li>
+</ul>
+<p><strong>Security:</strong></p>
+<ul>
+<li>JWT token validation and user authentication</li>
+<li>API key management for different client types</li>
+<li>Rate limiting per user/API key/IP address</li>
+<li>CORS policy enforcement</li>
+<li>Request/response sanitization</li>
+</ul>
+<p><strong>Protocol &amp; Data Transformation:</strong></p>
+<ul>
+<li>HTTP to HTTP/gRPC protocol bridging</li>
+<li>Request/response data format transformation</li>
+<li>API versioning support (v1, v2 routing)</li>
+<li>Legacy API compatibility layers</li>
+</ul>
+<p><strong>Observability:</strong></p>
+<ul>
+<li>Centralized access logging</li>
+<li>Request/response metrics collection</li>
+<li>Distributed tracing correlation</li>
+<li>Error rate and latency monitoring</li>
+</ul>
+<h3 id="routing-configuration">Routing Configuration</h3>
+<table>
+<thead>
+<tr>
+<th>Route Pattern</th>
+<th>Target Service</th>
+<th>Authentication</th>
+<th>Rate Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/v1/auth/*</code></td>
+<td>User Service</td>
+<td>None</td>
+<td>100/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/users/*</code></td>
+<td>User Service</td>
+<td>Required</td>
+<td>1000/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/products/*</code></td>
+<td>Catalog Service</td>
+<td>Optional</td>
+<td>2000/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/inventory/*</code></td>
+<td>Inventory Service</td>
+<td>Required</td>
+<td>500/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/cart/*</code></td>
+<td>Cart Service</td>
+<td>Required</td>
+<td>1000/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/orders/*</code></td>
+<td>Order Service</td>
+<td>Required</td>
+<td>200/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/payments/*</code></td>
+<td>Payment Service</td>
+<td>Required</td>
+<td>100/min</td>
+</tr>
+<tr>
+<td><code>/api/v1/shipping/*</code></td>
+<td>Shipping Service</td>
+<td>Required</td>
+<td>300/min</td>
+</tr>
+<tr>
+<td><code>/admin/api/*</code></td>
+<td>All Services</td>
+<td>Admin Role</td>
+<td>10000/min</td>
+</tr>
+</tbody>
+</table>
+<h2 id="consequences">Consequences</h2>
+<p>Positive:</p>
+<ul>
+<li>Single entry point simplifies client configuration and reduces coupling</li>
+<li>Centralized cross-cutting concerns reduce code duplication across services</li>
+<li>Consistent security policies and rate limiting across all APIs</li>
+<li>Simplified CORS configuration and SSL termination</li>
+<li>Better observability with centralized logging and metrics</li>
+<li>API versioning and backward compatibility support</li>
+<li>Circuit breaker pattern prevents cascading failures</li>
+</ul>
+<p>Negative:</p>
+<ul>
+<li>API Gateway becomes a potential single point of failure</li>
+<li>Additional network hop introduces latency</li>
+<li>Gateway configuration complexity increases with service growth</li>
+<li>Potential bottleneck for high-traffic scenarios</li>
+<li>Requires expertise in gateway technology and configuration</li>
+<li>Debugging distributed requests becomes more complex</li>
+</ul>
+<p>Neutral:</p>
+<ul>
+<li>Kong requires operational expertise and monitoring</li>
+<li>Gateway configuration needs to be version controlled and tested</li>
+<li>Service discovery integration required for dynamic routing</li>
+<li>Load balancer health checks need configuration</li>
+<li>Backup and disaster recovery planning for gateway instances</li>
+</ul>
+<h3 id="implementation-plan">Implementation Plan</h3>
+<p><strong>Phase 1: Basic Gateway Setup</strong></p>
+<ul>
+<li>Deploy Kong in high-availability configuration</li>
+<li>Configure basic routing for User and Catalog services</li>
+<li>Implement JWT authentication plugin</li>
+<li>Set up basic rate limiting</li>
+</ul>
+<p><strong>Phase 2: Security &amp; Monitoring</strong></p>
+<ul>
+<li>Configure rate limiting per service and user type</li>
+<li>Implement comprehensive logging and metrics</li>
+<li>Set up circuit breaker patterns</li>
+<li>Configure CORS policies</li>
+</ul>
+<p><strong>Phase 3: Advanced Features</strong></p>
+<ul>
+<li>Add request/response transformation plugins</li>
+<li>Implement API versioning support</li>
+<li>Configure service discovery integration</li>
+<li>Set up automated failover and health checking</li>
+</ul>
+<p><strong>Phase 4: Migration &amp; Optimization</strong></p>
+<ul>
+<li>Migrate all services behind the gateway</li>
+<li>Optimize performance and caching strategies</li>
+<li>Implement advanced security features</li>
+<li>Set up comprehensive monitoring and alerting</li>
+</ul>
+<hr />
+<p><em>This ADR establishes our API Gateway as the unified entry point for all client-service communication in our microservices architecture.</em></p>
+
+            </div>
+        </div>
+    </div>
+    
+    
+    <nav class="flex justify-between items-center mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+        
+        <a href="/adr-demo/adr-0004.html" class="flex-1 max-w-sm group">
+            <div class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">
+                <div class="text-blue-600 dark:text-blue-400 text-xl">←</div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Previous</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate">ADR-0004: Choose Database Per Service</div>
+                </div>
+            </div>
+        </a>
+        
+        
+        
+        <a href="/adr-demo/adr-0006.html" class="flex-1 max-w-sm group ml-4">
+            <div class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200">
+                <div class="flex-1 min-w-0 text-right">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Next</div>
+                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate">ADR-0006: Use Event-Driven Communication</div>
+                </div>
+                <div class="text-blue-600 dark:text-blue-400 text-xl">→</div>
+            </div>
+        </a>
+        
+    </nav>
+    
+    
+    <footer class="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400">
+                <strong class="text-gray-900 dark:text-white">ADR-0005</strong> 
+                • Status: <strong class="text-gray-900 dark:text-white">Accepted</strong>
+                 • Contains Component diagram
+            </div>
+            <a href="https://github.com/euforicio/adr-demo/blob/main/adr/0005-implement-api-gateway-pattern.md" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200">
+                📝 Edit on GitHub
+            </a>
+        </div>
+    </footer>
+</article>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    generateTableOfContents();
+    setupScrollSpy();
+});
+
+function generateTableOfContents() {
+    const headings = document.querySelectorAll('.adr-main-content h2, .adr-main-content h3, .adr-main-content h4');
+    const toc = document.getElementById('toc');
+    const tocList = document.getElementById('toc-list');
+    
+    if (headings.length > 2) {
+        toc.style.display = 'block';
+        
+        headings.forEach((heading, index) => {
+            const level = parseInt(heading.tagName.charAt(1));
+            const id = heading.id || `heading-${index}`;
+            heading.id = id;
+            
+            const li = document.createElement('li');
+            li.className = `toc-level-${level}`;
+            li.innerHTML = `<a href="#${id}" class="toc-link">${heading.textContent}</a>`;
+            tocList.appendChild(li);
+        });
+    }
+}
+
+function setupScrollSpy() {
+    const links = document.querySelectorAll('.toc-link');
+    const headings = document.querySelectorAll('.adr-main-content h2, .adr-main-content h3, .adr-main-content h4');
+    
+    if (links.length === 0 || headings.length === 0) return;
+    
+    function updateActiveLink() {
+        let current = '';
+        
+        headings.forEach(heading => {
+            const rect = heading.getBoundingClientRect();
+            if (rect.top <= 100) {
+                current = heading.id;
+            }
+        });
+        
+        links.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    window.addEventListener('scroll', updateActiveLink);
+    updateActiveLink();
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
+
+            </div>
+        </main>
+    </div>
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
+    
+    <script src="/adr-demo/static/js/main.js"></script>
+    
+    
+    
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const newTheme = isDark ? 'light' : 'dark';
+                    
+                    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+                    localStorage.setItem('theme', newTheme);
+                    
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
+                });
+            }
+        });
+    </script>
+
+    
+    <script>
+        
+        function getMermaidTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            if (isDark) {
+                return {
+                    theme: 'dark',
+                    themeVariables: {
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        darkMode: true,
+                        background: '#111827',
+                        
+                        
+                        primaryColor: '#4b5563',
+                        primaryTextColor: '#f9fafb',
+                        primaryBorderColor: '#9ca3af',
+                        
+                        
+                        lineColor: '#d1d5db',
+                        edgeLabelBackground: '#374151',
+                        
+                        
+                        secondaryColor: '#6b7280',
+                        secondaryTextColor: '#f3f4f6',
+                        secondaryBorderColor: '#9ca3af',
+                        
+                        
+                        tertiaryColor: '#374151',
+                        tertiaryTextColor: '#e5e7eb',
+                        tertiaryBorderColor: '#6b7280',
+                        
+                        
+                        mainBkg: '#4b5563',
+                        secondBkg: '#6b7280',
+                        tertiaryBkg: '#374151',
+                        
+                        
+                        textColor: '#f9fafb',
+                        labelTextColor: '#f9fafb',
+                        
+                        
+                        nodeBkg: '#4b5563',
+                        nodeBorder: '#9ca3af',
+                        clusterBkg: '#374151',
+                        clusterBorder: '#6b7280',
+                        defaultLinkColor: '#d1d5db',
+                        titleColor: '#f9fafb',
+                        
+                        
+                        actorBkg: '#4b5563',
+                        actorBorder: '#9ca3af',
+                        actorTextColor: '#f9fafb',
+                        actorLineColor: '#d1d5db',
+                        signalColor: '#f9fafb',
+                        signalTextColor: '#f9fafb',
+                        labelBoxBkgColor: '#374151',
+                        labelBoxBorderColor: '#6b7280',
+                        labelTextColor: '#f9fafb',
+                        loopTextColor: '#f9fafb',
+                        activationBorderColor: '#9ca3af',
+                        activationBkgColor: '#374151',
+                        sequenceNumberColor: '#f9fafb',
+                        
+                        
+                        personBkg: '#3b82f6',
+                        personBorder: '#2563eb',
+                        systemBkg: '#4b5563',
+                        systemBorder: '#9ca3af',
+                        systemDbBkg: '#6b7280',
+                        systemDbBorder: '#9ca3af',
+                        
+                        
+                        cScale0: '#111827',
+                        cScale1: '#1f2937',
+                        cScale2: '#374151',
+                        cScale3: '#4b5563',
+                        cScale4: '#6b7280',
+                        cScale5: '#9ca3af',
+                        cScale6: '#d1d5db',
+                        cScale7: '#e5e7eb',
+                        cScale8: '#f3f4f6',
+                        cScale9: '#f9fafb'
+                    }
+                };
+            } else {
+                return {
+                    theme: 'default',
+                    themeVariables: {
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        darkMode: false,
+                        background: '#ffffff',
+                        
+                        
+                        primaryColor: '#f3f4f6',
+                        primaryTextColor: '#111827',
+                        primaryBorderColor: '#6b7280',
+                        
+                        
+                        lineColor: '#374151',
+                        edgeLabelBackground: '#ffffff',
+                        
+                        
+                        secondaryColor: '#e5e7eb',
+                        secondaryTextColor: '#1f2937',
+                        secondaryBorderColor: '#6b7280',
+                        
+                        
+                        tertiaryColor: '#f9fafb',
+                        tertiaryTextColor: '#374151',
+                        tertiaryBorderColor: '#9ca3af',
+                        
+                        
+                        textColor: '#111827',
+                        labelTextColor: '#111827',
+                        
+                        
+                        nodeBkg: '#f3f4f6',
+                        nodeBorder: '#6b7280',
+                        defaultLinkColor: '#374151',
+                        titleColor: '#111827'
+                    }
+                };
+            }
+        }
+
+        function initializeMermaid() {
+            const config = getMermaidTheme();
+            
+            mermaid.initialize({
+                startOnLoad: true,
+                ...config,
+                
+                layout: 'dagre',
+                maxTextSize: 90000,
+                maxEdges: 200,
+                
+                flowchart: {
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis',
+                    padding: 20,
+                    nodeSpacing: 80,
+                    rankSpacing: 80,
+                    diagramPadding: 20,
+                    wrappingWidth: 200,
+                    
+                    elk: {
+                        algorithm: 'layered',
+                        'elk.direction': 'DOWN',
+                        'elk.layered.spacing.nodeNodeBetweenLayers': 80,
+                        'elk.layered.spacing.edgeNodeBetweenLayers': 40,
+                        'elk.spacing.nodeNode': 80,
+                        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX'
+                    }
+                },
+                
+                sequence: {
+                    useMaxWidth: true,
+                    diagramMarginX: 60,
+                    diagramMarginY: 40,
+                    actorMargin: 60,
+                    width: 180,
+                    height: 80,
+                    boxMargin: 15,
+                    boxTextMargin: 8,
+                    noteMargin: 15,
+                    messageMargin: 45,
+                    mirrorActors: true,
+                    forceMenus: true,
+                    rightAngles: false
+                },
+                
+                c4: {
+                    useMaxWidth: true,
+                    diagramMarginX: 60,
+                    diagramMarginY: 40,
+                    c4ShapeMargin: 60,
+                    c4ShapePadding: 25,
+                    width: 240,
+                    height: 80,
+                    boxMargin: 15,
+                    wrap: true,
+                    wrapPadding: 10
+                },
+                
+                er: {
+                    useMaxWidth: true,
+                    diagramMarginX: 60,
+                    diagramMarginY: 40,
+                    entityPadding: 20,
+                    stroke: config.themeVariables.lineColor,
+                    fill: config.themeVariables.primaryColor,
+                    fontSize: 12,
+                    minEntityWidth: 100,
+                    minEntityHeight: 75
+                },
+                
+                gitgraph: {
+                    useMaxWidth: true,
+                    diagramMarginX: 60,
+                    diagramMarginY: 40,
+                    mainBranchName: 'main',
+                    theme: 'base',
+                    themeVariables: config.themeVariables
+                },
+                
+                state: {
+                    useMaxWidth: true,
+                    dividerMargin: 20,
+                    sizeUnit: 10,
+                    statePadding: 20,
+                    fontSize: 12,
+                    fontSizeFactor: 1.2
+                },
+                
+                journey: {
+                    useMaxWidth: true,
+                    diagramMarginX: 60,
+                    diagramMarginY: 40,
+                    leftMargin: 150,
+                    width: 150,
+                    height: 50,
+                    boxMargin: 10,
+                    boxTextMargin: 5
+                }
+            });
+        }
+
+        
+        initializeMermaid();
+        
+        
+        function openMermaidFullscreen(diagramId) {
+            const diagram = document.getElementById(diagramId);
+            const svg = diagram.querySelector('svg');
+            if (svg) {
+                
+                const clonedSvg = svg.cloneNode(true);
+                
+                
+                clonedSvg.removeAttribute('style');
+                clonedSvg.removeAttribute('width');
+                clonedSvg.removeAttribute('height');
+                
+                
+                clonedSvg.setAttribute('width', '100%');
+                clonedSvg.setAttribute('height', '100%');
+                clonedSvg.style.width = '100%';
+                clonedSvg.style.height = '100%';
+                clonedSvg.style.maxWidth = 'none';
+                clonedSvg.style.maxHeight = 'none';
+                
+                const modalId = 'mermaid-modal-' + Date.now();
+                const modal = document.createElement('div');
+                modal.className = 'mermaid-modal';
+                modal.id = modalId;
+                modal.innerHTML = `
+                    <div class="mermaid-modal-content">
+                        <div class="mermaid-zoom-controls">
+                            <button class="mermaid-zoom-btn" onclick="zoomDiagram('${modalId}', 'in')" title="Zoom In">+</button>
+                            <button class="mermaid-zoom-btn" onclick="zoomDiagram('${modalId}', 'out')" title="Zoom Out">−</button>
+                            <button class="mermaid-zoom-btn" onclick="zoomDiagram('${modalId}', 'fit')" title="Fit to Container">⌂</button>
+                        </div>
+                        <button class="mermaid-modal-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                        <div class="mermaid-svg-container">
+                            ${clonedSvg.outerHTML}
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                
+                const svgElement = modal.querySelector('svg');
+                svgElement.dataset.zoom = '1';
+                svgElement.dataset.translateX = '0';
+                svgElement.dataset.translateY = '0';
+                
+                
+                addPanFunctionality(modal.querySelector('.mermaid-svg-container'), svgElement);
+            }
+        }
+        
+        function zoomDiagram(modalId, action) {
+            const modal = document.getElementById(modalId);
+            const svg = modal.querySelector('svg');
+            
+            let currentZoom = parseFloat(svg.dataset.zoom) || 1;
+            let translateX = parseFloat(svg.dataset.translateX) || 0;
+            let translateY = parseFloat(svg.dataset.translateY) || 0;
+            
+            switch(action) {
+                case 'in':
+                    currentZoom = Math.min(currentZoom * 1.1, 3); 
+                    break;
+                case 'out':
+                    currentZoom = Math.max(currentZoom / 1.1, 0.2); 
+                    break;
+                case 'fit':
+                    currentZoom = 1;
+                    translateX = 0;
+                    translateY = 0;
+                    break;
+            }
+            
+            svg.dataset.zoom = currentZoom;
+            svg.dataset.translateX = translateX;
+            svg.dataset.translateY = translateY;
+            
+            svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+        }
+        
+        function addPanFunctionality(container, svg) {
+            let isPanning = false;
+            let startX, startY;
+            let initialTranslateX, initialTranslateY;
+            
+            
+            function disableTransition() {
+                svg.style.transition = 'none';
+            }
+            
+            function enableTransition() {
+                svg.style.transition = 'transform 0.2s ease';
+            }
+            
+            container.addEventListener('mousedown', (e) => {
+                
+                if (e.target.closest('.mermaid-zoom-btn') || e.target.closest('.mermaid-modal-close')) return;
+                
+                isPanning = true;
+                container.classList.add('panning');
+                disableTransition();
+                
+                startX = e.clientX;
+                startY = e.clientY;
+                initialTranslateX = parseFloat(svg.dataset.translateX) || 0;
+                initialTranslateY = parseFloat(svg.dataset.translateY) || 0;
+                
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                const newTranslateX = initialTranslateX + deltaX;
+                const newTranslateY = initialTranslateY + deltaY;
+                
+                svg.dataset.translateX = newTranslateX;
+                svg.dataset.translateY = newTranslateY;
+                
+                const currentZoom = parseFloat(svg.dataset.zoom) || 1;
+                svg.style.transform = `translate(${newTranslateX}px, ${newTranslateY}px) scale(${currentZoom})`;
+                
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isPanning) {
+                    isPanning = false;
+                    container.classList.remove('panning');
+                    enableTransition();
+                }
+            });
+            
+            
+            let zoomTimeout;
+            let lastZoomTime = 0;
+            
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const now = Date.now();
+                const timeDiff = now - lastZoomTime;
+                
+                
+                const isGesture = timeDiff < 50 && Math.abs(e.deltaY) < 50;
+                
+                const currentZoom = parseFloat(svg.dataset.zoom) || 1;
+                const currentTranslateX = parseFloat(svg.dataset.translateX) || 0;
+                const currentTranslateY = parseFloat(svg.dataset.translateY) || 0;
+                
+                let zoomFactor;
+                if (isGesture) {
+                    
+                    zoomFactor = e.deltaY > 0 ? 0.98 : 1.02;
+                } else {
+                    
+                    zoomFactor = e.deltaY > 0 ? 0.92 : 1.08;
+                }
+                
+                const newZoom = Math.min(Math.max(currentZoom * zoomFactor, 0.2), 3);
+                
+                
+                const containerRect = container.getBoundingClientRect();
+                const centerX = e.clientX - containerRect.left - containerRect.width / 2;
+                const centerY = e.clientY - containerRect.top - containerRect.height / 2;
+                
+                
+                const zoomRatio = newZoom / currentZoom;
+                const newTranslateX = currentTranslateX - (centerX - currentTranslateX) * (zoomRatio - 1);
+                const newTranslateY = currentTranslateY - (centerY - currentTranslateY) * (zoomRatio - 1);
+                
+                svg.dataset.zoom = newZoom;
+                svg.dataset.translateX = newTranslateX;
+                svg.dataset.translateY = newTranslateY;
+                lastZoomTime = now;
+                
+                
+                svg.style.transition = 'none';
+                svg.style.transform = `translate(${newTranslateX}px, ${newTranslateY}px) scale(${newZoom})`;
+                
+                
+                clearTimeout(zoomTimeout);
+                zoomTimeout = setTimeout(() => {
+                    svg.style.transition = 'transform 0.2s ease';
+                }, 150);
+            });
+            
+            
+            container.addEventListener('contextmenu', (e) => {
+                if (isPanning) {
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        function copyMermaidCode(diagramId) {
+            const diagram = document.getElementById(diagramId);
+            const code = diagram.getAttribute('data-diagram');
+            if (code && navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => {
+                    console.log('Diagram code copied to clipboard');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+

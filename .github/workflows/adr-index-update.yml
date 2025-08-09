@@ -1,0 +1,147 @@
+name: Auto-Update ADR Index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/adr/[0-9][0-9][0-9][0-9]-*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    name: Update README ADR Index
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Generate ADR index
+      id: generate-index
+      run: |
+        #!/bin/bash
+        set -e
+        
+        echo "🔍 Generating ADR index..."
+        
+        # Create temporary file for new index
+        temp_file=$(mktemp)
+        
+        # Generate table header
+        echo "| ADR | Title | Status | C4 Diagram Type |" > "$temp_file"
+        echo "|-----|-------|--------|-----------------|" >> "$temp_file"
+        
+        # Find all ADR files and sort them
+        adr_files=$(find docs/adr -name '[0-9][0-9][0-9][0-9]-*.md' | sort)
+        
+        if [ -z "$adr_files" ]; then
+          echo "No ADR files found"
+          echo "index_changed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Process each ADR file
+        for file in $adr_files; do
+          # Extract number and create filename
+          number=$(echo "$file" | sed 's/.*\/\([0-9][0-9][0-9][0-9]\)-.*/\1/')
+          filename=$(basename "$file")
+          
+          # Extract title (first line without #)
+          title=$(head -1 "$file" | sed 's/^# //')
+          
+          # Extract status
+          status_section=$(grep -A 2 "^## Status" "$file" || echo "Unknown")
+          status=$(echo "$status_section" | tail -1 | xargs)
+          
+          # Check for different types of C4 diagrams
+          diagram_type="-"
+          if grep -q "C4Context\|flowchart.*Context" "$file"; then
+            diagram_type="Context"
+          elif grep -q "C4Container\|Container.*Diagram" "$file"; then
+            diagram_type="Container"
+          elif grep -q "C4Component\|Component.*Diagram" "$file"; then
+            diagram_type="Component"
+          elif grep -q "sequenceDiagram\|flowchart.*TD\|flowchart.*LR" "$file"; then
+            diagram_type="Dynamic"
+          fi
+          
+          # Add row to table
+          echo "| [$number]($file) | $title | $status | $diagram_type |" >> "$temp_file"
+        done
+        
+        # Check if index has changed
+        start_line=$(grep -n "| ADR | Title | Status | C4 Diagram Type |" README.md | cut -d: -f1)
+        end_line=$(grep -n "### ADR Status Definitions" README.md | cut -d: -f1)
+        
+        if [ -n "$start_line" ] && [ -n "$end_line" ]; then
+          # Extract current index from README
+          current_index=$(sed -n "${start_line},$((end_line-2))p" README.md)
+          new_index=$(cat "$temp_file")
+          
+          if [ "$current_index" = "$new_index" ]; then
+            echo "✅ ADR index is already up to date"
+            echo "index_changed=false" >> $GITHUB_OUTPUT
+            rm "$temp_file"
+            exit 0
+          fi
+        fi
+        
+        # Create new README with updated index
+        if [ -n "$start_line" ] && [ -n "$end_line" ]; then
+          # Replace existing index
+          head -n $((start_line-1)) README.md > README_new.md
+          cat "$temp_file" >> README_new.md
+          echo "" >> README_new.md
+          tail -n +$((end_line-1)) README.md >> README_new.md
+          mv README_new.md README.md
+        else
+          echo "❌ Could not find ADR index section in README.md"
+          exit 1
+        fi
+        
+        rm "$temp_file"
+        echo "✅ ADR index updated successfully"
+        echo "index_changed=true" >> $GITHUB_OUTPUT
+    
+    - name: Check for changes
+      id: check-changes
+      run: |
+        if git diff --quiet; then
+          echo "changes_detected=false" >> $GITHUB_OUTPUT
+        else
+          echo "changes_detected=true" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Commit and push changes
+      if: steps.check-changes.outputs.changes_detected == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git commit -m "docs: auto-update ADR index
+        
+        🤖 Automatically updated README.md ADR index with latest ADRs
+        
+        Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+        git push
+    
+    - name: Create summary
+      run: |
+        if [ "${{ steps.generate-index.outputs.index_changed }}" = "true" ] && [ "${{ steps.check-changes.outputs.changes_detected }}" = "true" ]; then
+          echo "✅ ADR index was updated and committed"
+        elif [ "${{ steps.generate-index.outputs.index_changed }}" = "false" ]; then
+          echo "ℹ️  ADR index was already up to date"
+        else
+          echo "⚠️  ADR index was generated but no changes were detected"
+        fi
