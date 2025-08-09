@@ -21,6 +21,26 @@ jobs:
         with:
           fetch-depth: 0
       
+      - name: Setup MCP for File Operations
+        run: |
+          # Install Node.js MCP packages for file operations
+          npm install -g @modelcontextprotocol/server-filesystem
+          
+          # Setup MCP server configuration
+          cat > mcp-config.json << 'EOF'
+          {
+            "mcpServers": {
+              "filesystem": {
+                "command": "npx",
+                "args": ["@modelcontextprotocol/server-filesystem", "/tmp"],
+                "env": {
+                  "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
+                }
+              }
+            }
+          }
+          EOF
+      
       - name: Setup Git Configuration
         run: |
           git config --global user.name "github-actions[bot]"
@@ -69,11 +89,11 @@ jobs:
         with:
           model: openai/gpt-4o-mini
           system-prompt: |
-            You are an expert software engineer tasked with analyzing issues and determining the implementation approach.
+            You are an expert software engineer with file system access through MCP.
             Based on the issue description and repository structure, you need to:
             1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
-            2. Determine which files need to be modified or created
-            3. Provide a clear implementation plan
+            2. Determine which files need to be modified, created, or removed
+            3. Provide a clear implementation plan with proper git operations for file management
             
             Respond in JSON format with the following structure:
             {
@@ -139,14 +159,16 @@ jobs:
           model: openai/gpt-4o
           max-tokens: 4000
           system-prompt: |
-            You are an expert software engineer. Generate high-quality, production-ready code based on the requirements.
+            You are an expert software engineer with MCP file system access.
+            Generate high-quality, production-ready code based on the requirements.
             Follow these guidelines:
             1. Write clean, well-commented code
             2. Follow best practices for the language/framework
-            3. Include error handling where appropriate
+            3. Include proper error handling where appropriate
             4. Make code that is maintainable and testable
             5. If creating multiple files, separate them with "--- FILE: path/to/file ---"
             6. Only output the code content, no explanations
+            7. Use proper git operations for file management (deletions will be handled with git rm)
             
             For modifications to existing files, show the complete updated file content.
           prompt: |
