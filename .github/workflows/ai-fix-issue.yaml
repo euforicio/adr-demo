@@ -69,11 +69,24 @@ jobs:
       
       - name: Analyze Issue and Generate Implementation Plan
         id: analyze-issue
-        uses: actions/ai-inference@v1
+        uses: actions/ai-inference@v1.2.8
         with:
           model: openai/gpt-4o-mini
-          input: |
-            system: You are an expert software engineer with file system access through MCP.
+          prompt: |
+            Issue Title: ${{ steps.issue-details.outputs.title }}
+            Issue Description: ${{ steps.issue-details.outputs.body }}
+            
+            Repository Files:
+            ${{ steps.repo-structure.outputs.files }}
+            
+            Project Type Indicators:
+            - Has package.json: ${{ steps.repo-structure.outputs.has_package_json }}
+            - Has requirements.txt: ${{ steps.repo-structure.outputs.has_requirements }}
+            - Has Gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
+            - Has Cargo.toml: ${{ steps.repo-structure.outputs.has_cargo }}
+            - Has go.mod: ${{ steps.repo-structure.outputs.has_go_mod }}
+          system-prompt: |
+            You are an expert software engineer with file system access through MCP.
             Based on the issue description and repository structure, you need to:
             1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
             2. Determine which files need to be modified, created, or removed
@@ -90,19 +103,8 @@ jobs:
             
             Only suggest changes to existing files if they are in the repository structure provided.
             Be conservative and practical - suggest minimal changes needed to address the issue.
-            
-            user: Issue Title: ${{ steps.issue-details.outputs.title }}
-            Issue Description: ${{ steps.issue-details.outputs.body }}
-            
-            Repository Files:
-            ${{ steps.repo-structure.outputs.files }}
-            
-            Project Type Indicators:
-            - Has package.json: ${{ steps.repo-structure.outputs.has_package_json }}
-            - Has requirements.txt: ${{ steps.repo-structure.outputs.has_requirements }}
-            - Has Gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
-            - Has Cargo.toml: ${{ steps.repo-structure.outputs.has_cargo }}
-            - Has go.mod: ${{ steps.repo-structure.outputs.has_go_mod }}
+          enable-github-mcp: true
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Parse Implementation Plan
         id: parse-plan
@@ -144,8 +146,17 @@ jobs:
           max-tokens: 4000
           enable-github-mcp: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          input: |
-            system: You are an expert software engineer with MCP file system access for direct file operations.
+          prompt: |
+            Issue Title: ${{ steps.issue-details.outputs.title }}
+            Issue Description: ${{ steps.issue-details.outputs.body }}
+            
+            Implementation Plan: ${{ steps.parse-plan.outputs.implementation_summary }}
+            Files to modify: ${{ steps.parse-plan.outputs.files_to_modify }}
+            Files to create: ${{ steps.parse-plan.outputs.files_to_create }}
+            
+            Use MCP file operations to implement the necessary changes for this issue.
+          system-prompt: |
+            You are an expert software engineer with MCP file system access for direct file operations.
             
             You MUST use MCP tools to:
             1. Read existing files to understand the current codebase structure
@@ -164,15 +175,6 @@ jobs:
             IMPORTANT: You must actually perform the file operations using MCP tools. Do not just describe what should be done - DO the file operations.
             
             After completing all file operations, provide a brief summary of the changes made.
-            
-            user: Issue Title: ${{ steps.issue-details.outputs.title }}
-            Issue Description: ${{ steps.issue-details.outputs.body }}
-            
-            Implementation Plan: ${{ steps.parse-plan.outputs.implementation_summary }}
-            Files to modify: ${{ steps.parse-plan.outputs.files_to_modify }}
-            Files to create: ${{ steps.parse-plan.outputs.files_to_create }}
-            
-            Use MCP file operations to implement the necessary changes for this issue.
       
       - name: Create Branch and Commit Changes
         id: create-branch
