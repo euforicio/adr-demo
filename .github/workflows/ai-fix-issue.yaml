@@ -32,7 +32,7 @@ jobs:
             "mcpServers": {
               "filesystem": {
                 "command": "npx",
-                "args": ["@modelcontextprotocol/server-filesystem", "/tmp"],
+                "args": ["@modelcontextprotocol/server-filesystem", "."],
                 "env": {
                   "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
                 }
@@ -155,24 +155,32 @@ jobs:
       - name: Generate Code Changes with MCP
         id: generate-code
         uses: actions/ai-inference@v1
+        env:
+          MCP_CONFIG: ./mcp-config.json
         with:
           model: openai/gpt-4o
           max-tokens: 4000
+          mcp-config: ./mcp-config.json
           system-prompt: |
             You are an expert software engineer with MCP file system access for direct file operations.
             
-            Use MCP to directly read existing files and create/modify files as needed.
-            Use MCP file operations to make the changes directly. If MCP is unavailable or fails, output the code changes directly in your response as a fallback.
+            You MUST use MCP tools to:
+            1. Read existing files to understand the current codebase structure
+            2. Create new files or modify existing files directly in the repository
+            3. Use MCP filesystem operations to make actual changes
             
-            Follow these guidelines:
-            1. Use MCP to read existing files to understand current structure
-            2. Use MCP to create new files or modify existing ones directly
-            3. Write clean, well-commented code following project conventions
-            4. Include proper error handling where appropriate
-            5. Make code that is maintainable and testable
-            6. Create directories as needed using MCP
+            Implementation requirements:
+            - Use MCP file_read to examine existing code
+            - Use MCP file_write to create new files
+            - Use MCP file_edit to modify existing files
+            - Follow project conventions and code style
+            - Write clean, maintainable, well-commented code
+            - Include proper error handling
+            - Create directories using MCP if needed
             
-            After making the changes, simply respond with a summary of what was implemented.
+            IMPORTANT: You must actually perform the file operations using MCP tools. Do not just describe what should be done - DO the file operations.
+            
+            After completing all file operations, provide a brief summary of the changes made.
           prompt: |
             Issue Title: ${{ steps.issue-details.outputs.title }}
             Issue Description: ${{ steps.issue-details.outputs.body }}
@@ -196,12 +204,16 @@ jobs:
           # Check if any files were changed by MCP
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes detected from MCP operations"
-            # Create a minimal implementation note if no changes were made
-            echo "# AI Implementation for Issue #${ISSUE_NUMBER}" > AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
-            echo "" >> AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
-            echo "Implementation completed via MCP file operations." >> AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
-            echo "See commit history for specific changes made." >> AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
-            git add AI_IMPLEMENTATION_${ISSUE_NUMBER}.md
+            echo "This might indicate that MCP file operations failed or the AI didn't make actual file changes."
+            # Create a fallback note
+            echo "# AI Implementation Failed for Issue #${ISSUE_NUMBER}" > AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
+            echo "" >> AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
+            echo "MCP file operations did not produce any changes." >> AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
+            echo "The AI may need to be instructed more specifically to use MCP file operations." >> AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
+            git add AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
+          else
+            echo "Changes detected! Files modified by MCP operations:"
+            git status --porcelain
           fi
           
           # Add and commit all changes
