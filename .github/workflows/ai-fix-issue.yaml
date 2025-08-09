@@ -68,9 +68,6 @@ jobs:
           echo "has_cargo=$([[ -f Cargo.toml ]] && echo true || echo false)" >> $GITHUB_OUTPUT
           echo "has_go_mod=$([[ -f go.mod ]] && echo true || echo false)" >> $GITHUB_OUTPUT
       
-      - name: Analyze Issue and Generate Implementation Plan
-        id: analyze-issue
-        uses: actions/ai-inference@v1.2.8
       - name: Create temp files for analysis
         run: |
           echo '${{ steps.issue-details.outputs.title }}' > /tmp/issue_title.txt
@@ -126,9 +123,6 @@ jobs:
             core.setOutput('implementation_summary', plan.implementation_summary);
             core.setOutput('complexity', plan.complexity);
       
-      - name: Generate Code Changes with MCP
-        id: generate-code
-        uses: actions/ai-inference@v1.2.8
       - name: Create temp files for code generation
         run: |
           echo '${{ steps.issue-details.outputs.title }}' > /tmp/issue_title2.txt
