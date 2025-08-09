@@ -26,12 +26,15 @@ messages:
       Update Request: {{update_request}}
 
       Changes to implement: {{change_summary}}
+
       Files to modify: {{files_to_modify}}
+
       Files to add: {{files_to_add}}
+
       Files to remove: {{files_to_remove}}
 
-      Current file contents:
-      {{file_contents}}
+      Current file contents: {{file_contents}}
 
       Generate the updated code based on the request.
 model: openai/gpt-4o
+EOF < /dev/null

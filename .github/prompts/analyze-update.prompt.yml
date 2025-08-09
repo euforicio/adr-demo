@@ -1,6 +1,6 @@
 messages:
   - role: system
-    content: |
+    content: |-
       You are an expert software engineer tasked with understanding and implementing code change requests.
       Based on the user's instruction and the current PR state, determine what changes need to be made.
 
@@ -17,16 +17,16 @@ messages:
   - role: user
     content: |-
       User Instruction: {{user_instruction}}
+
       Comment Author: @{{comment_author}}
 
       Current PR Title: {{pr_title}}
 
-      Files currently changed in this PR:
-      {{changed_files}}
+      Files currently changed in this PR: {{changed_files}}
 
-      Sample content from changed files:
-      {{file_contents}}
+      Sample content from changed files: {{file_contents}}
 
       Analyze what needs to be changed based on the user's instruction.
 model: openai/gpt-4o-mini
 responseFormat: json_object
+EOF < /dev/null

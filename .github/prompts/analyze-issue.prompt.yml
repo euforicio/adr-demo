@@ -1,6 +1,6 @@
 messages:
   - role: system
-    content: |
+    content: |-
       You are an expert software engineer.
       Based on the issue description and repository structure, you need to:
       1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
@@ -21,16 +21,11 @@ messages:
   - role: user
     content: |-
       Issue Title: {{issue_title}}
+
       Issue Description: {{issue_body}}
 
-      Repository Files:
-      {{repo_files}}
+      Repository Files: {{repo_files}}
 
-      Project Type Indicators:
-      Has package.json: {{has_package_json}}
-      Has requirements.txt: {{has_requirements}}
-      Has Gemfile: {{has_gemfile}}
-      Has Cargo.toml: {{has_cargo}}
-      Has go.mod: {{has_go_mod}}
+      Project Type - Has package.json: {{has_package_json}}, Has requirements.txt: {{has_requirements}}, Has Gemfile: {{has_gemfile}}, Has Cargo.toml: {{has_cargo}}, Has go.mod: {{has_go_mod}}
 model: openai/gpt-4o-mini
 responseFormat: json_object
