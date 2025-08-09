@@ -65,9 +65,12 @@ jobs:
       
       - name: Generate PR Summary with AI
         id: ai-summary
-        uses: actions/ai-inference@v1
+        uses: actions/ai-inference@v1.2.8
         with:
           model: openai/gpt-4o-mini  # You can change to other models like mistral-ai/ministral-3b
+          enable-github-mcp: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
           system-prompt: |
             You are an expert code reviewer and technical writer. Your task is to create clear, 
             concise summaries of pull requests that help reviewers understand the changes quickly.
