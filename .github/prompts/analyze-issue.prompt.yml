@@ -25,4 +25,3 @@ messages:
       Project Type - Has package.json {{has_package_json}}, Has requirements.txt {{has_requirements}}, Has Gemfile {{has_gemfile}}, Has Cargo.toml {{has_cargo}}, Has go.mod {{has_go_mod}}
 model: openai/gpt-4o-mini
 responseFormat: json_object
-EOF < /dev/null
