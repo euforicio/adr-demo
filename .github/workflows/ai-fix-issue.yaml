@@ -71,18 +71,28 @@ jobs:
       - name: Analyze Issue and Generate Implementation Plan
         id: analyze-issue
         uses: actions/ai-inference@v1.2.8
+      - name: Create temp files for analysis
+        run: |
+          echo '${{ steps.issue-details.outputs.title }}' > /tmp/issue_title.txt
+          echo '${{ steps.issue-details.outputs.body }}' > /tmp/issue_body.txt  
+          echo '${{ steps.repo-structure.outputs.files }}' > /tmp/repo_files.txt
+      
+      - name: Analyze Issue and Generate Implementation Plan
+        id: analyze-issue
+        uses: actions/ai-inference@v1.2.8
         with:
           prompt-file: './.github/prompts/analyze-issue.prompt.yml'
           enable-github-mcp: true
           input: |
-            issue_title: "${{ steps.issue-details.outputs.title }}"
-            issue_body: "${{ steps.issue-details.outputs.body }}"
-            repo_files: "${{ steps.repo-structure.outputs.files }}"
             has_package_json: ${{ steps.repo-structure.outputs.has_package_json }}
             has_requirements: ${{ steps.repo-structure.outputs.has_requirements }}
             has_gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
             has_cargo: ${{ steps.repo-structure.outputs.has_cargo }}
             has_go_mod: ${{ steps.repo-structure.outputs.has_go_mod }}
+          file_input: |
+            issue_title: /tmp/issue_title.txt
+            issue_body: /tmp/issue_body.txt
+            repo_files: /tmp/repo_files.txt
       
       - name: Parse Implementation Plan
         id: parse-plan
@@ -119,16 +129,27 @@ jobs:
       - name: Generate Code Changes with MCP
         id: generate-code
         uses: actions/ai-inference@v1.2.8
+      - name: Create temp files for code generation
+        run: |
+          echo '${{ steps.issue-details.outputs.title }}' > /tmp/issue_title2.txt
+          echo '${{ steps.issue-details.outputs.body }}' > /tmp/issue_body2.txt
+          echo '${{ steps.parse-plan.outputs.implementation_summary }}' > /tmp/implementation_summary.txt
+          echo '${{ steps.parse-plan.outputs.files_to_modify }}' > /tmp/files_to_modify.txt
+          echo '${{ steps.parse-plan.outputs.files_to_create }}' > /tmp/files_to_create.txt
+      
+      - name: Generate Code Changes with MCP
+        id: generate-code
+        uses: actions/ai-inference@v1.2.8
         with:
           prompt-file: './.github/prompts/generate-code.prompt.yml'
           max-tokens: 4000
           enable-github-mcp: true
-          input: |
-            issue_title: "${{ steps.issue-details.outputs.title }}"
-            issue_body: "${{ steps.issue-details.outputs.body }}"
-            implementation_summary: "${{ steps.parse-plan.outputs.implementation_summary }}"
-            files_to_modify: "${{ steps.parse-plan.outputs.files_to_modify }}"
-            files_to_create: "${{ steps.parse-plan.outputs.files_to_create }}"
+          file_input: |
+            issue_title: /tmp/issue_title2.txt
+            issue_body: /tmp/issue_body2.txt
+            implementation_summary: /tmp/implementation_summary.txt
+            files_to_modify: /tmp/files_to_modify.txt
+            files_to_create: /tmp/files_to_create.txt
       
       - name: Create Branch and Commit Changes
         id: create-branch
