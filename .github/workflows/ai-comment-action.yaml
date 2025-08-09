@@ -104,7 +104,7 @@ jobs:
       
       - name: Analyze Update Request
         id: analyze-update
-        uses: actions/ai-inference@v1.2
+        uses: actions/ai-inference@v1.2.8
         with:
           model: openai/gpt-4o-mini
           enable-github-mcp: true
@@ -175,7 +175,7 @@ jobs:
       
       - name: Generate Updated Code
         id: generate-updates
-        uses: actions/ai-inference@v1.2
+        uses: actions/ai-inference@v1.2.8
         with:
           model: openai/gpt-4o
           max-tokens: 4000

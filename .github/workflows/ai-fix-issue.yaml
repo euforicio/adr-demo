@@ -138,7 +138,7 @@ jobs:
       
       - name: Generate Code Changes with MCP
         id: generate-code
-        uses: actions/ai-inference@v1.2
+        uses: actions/ai-inference@v1.2.8
         with:
           model: openai/gpt-4o
           max-tokens: 4000
