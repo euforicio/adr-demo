@@ -1,4 +1,4 @@
-name: AI PR Generator and Updater
+name: AI Comment Action
 
 on:
   issues:
