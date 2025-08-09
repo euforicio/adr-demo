@@ -24,26 +24,6 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Setup MCP for File Operations
-        run: |
-          # Install Node.js MCP packages for file operations
-          npm install -g @modelcontextprotocol/server-filesystem
-          
-          # Setup MCP server configuration
-          cat > mcp-config.json << 'EOF'
-          {
-            "mcpServers": {
-              "filesystem": {
-                "command": "npx",
-                "args": ["@modelcontextprotocol/server-filesystem", "/tmp"],
-                "env": {
-                  "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
-                }
-              }
-            }
-          }
-          EOF
-      
       - name: Setup Git Configuration
         run: |
           git config --global user.name "github-actions[bot]"
@@ -92,11 +72,11 @@ jobs:
         with:
           model: openai/gpt-4o-mini
           system-prompt: |
-            You are an expert software engineer with file system access through MCP.
+            You are an expert software engineer tasked with analyzing issues and determining the implementation approach.
             Based on the issue description and repository structure, you need to:
             1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
-            2. Determine which files need to be modified, created, or removed
-            3. Provide a clear implementation plan with proper git operations for file management
+            2. Determine which files need to be modified or created
+            3. Provide a clear implementation plan
             
             Respond in JSON format with the following structure:
             {
@@ -162,16 +142,14 @@ jobs:
           model: openai/gpt-4o
           max-tokens: 4000
           system-prompt: |
-            You are an expert software engineer with MCP file system access.
-            Generate high-quality, production-ready code based on the requirements.
+            You are an expert software engineer. Generate high-quality, production-ready code based on the requirements.
             Follow these guidelines:
             1. Write clean, well-commented code
             2. Follow best practices for the language/framework
-            3. Include proper error handling where appropriate
+            3. Include error handling where appropriate
             4. Make code that is maintainable and testable
             5. If creating multiple files, separate them with "--- FILE: path/to/file ---"
             6. Only output the code content, no explanations
-            7. Use proper git operations for file management (deletions will be handled with git rm)
             
             For modifications to existing files, show the complete updated file content.
           prompt: |
@@ -417,26 +395,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Setup MCP for File Operations
-        run: |
-          # Install Node.js MCP packages for file operations
-          npm install -g @modelcontextprotocol/server-filesystem
-          
-          # Setup MCP server configuration
-          cat > mcp-config.json << 'EOF'
-          {
-            "mcpServers": {
-              "filesystem": {
-                "command": "npx",
-                "args": ["@modelcontextprotocol/server-filesystem", "/tmp"],
-                "env": {
-                  "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
-                }
-              }
-            }
-          }
-          EOF
-      
       - name: Setup Git Configuration
         run: |
           git config --global user.name "github-actions[bot]"
@@ -539,8 +497,7 @@ jobs:
           model: openai/gpt-4o
           max-tokens: 4000
           system-prompt: |
-            You are an expert software engineer with access to file system operations through MCP.
-            Generate updated code based on the change request and handle file operations properly.
+            You are an expert software engineer. Generate updated code based on the change request.
             Follow these guidelines:
             1. Maintain consistency with existing code style
             2. Only make the requested changes, don't alter unrelated code
@@ -548,9 +505,7 @@ jobs:
             4. Add comments for complex changes
             5. If updating multiple files, separate them with "--- FILE: path/to/file ---"
             6. For file modifications, provide the complete updated file content
-            7. Use git operations for file removal (files will be properly removed using git rm)
-            8. Only output code, no explanations
-            9. When removing files, ensure they are tracked in git before removal
+            7. Only output code, no explanations
           prompt: |
             Update Request: ${{ steps.pr-details.outputs.instruction }}
             
@@ -585,20 +540,11 @@ jobs:
           files_to_add = json.loads(os.environ.get('FILES_TO_ADD', '[]'))
           files_to_remove = json.loads(os.environ.get('FILES_TO_REMOVE', '[]'))
           
-          # Remove files if specified with proper git operations
+          # Remove files if specified
           for filepath in files_to_remove:
               if os.path.exists(filepath):
-                  # Use git rm to properly remove tracked files
-                  import subprocess
-                  try:
-                      subprocess.run(['git', 'rm', filepath], check=True, capture_output=True)
-                      print(f"Git removed: {filepath}")
-                  except subprocess.CalledProcessError:
-                      # If git rm fails, fall back to regular removal
-                      os.remove(filepath)
-                      print(f"Force removed: {filepath}")
-              else:
-                  print(f"File not found (already removed?): {filepath}")
+                  os.remove(filepath)
+                  print(f"Removed: {filepath}")
           
           # Split code by file markers
           file_pattern = r'--- FILE: (.*?) ---'
