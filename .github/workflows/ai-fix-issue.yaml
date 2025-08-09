@@ -72,8 +72,8 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o-mini
-          system-prompt: |
-            You are an expert software engineer with file system access through MCP.
+          input: |
+            system: You are an expert software engineer with file system access through MCP.
             Based on the issue description and repository structure, you need to:
             1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
             2. Determine which files need to be modified, created, or removed
@@ -90,8 +90,8 @@ jobs:
             
             Only suggest changes to existing files if they are in the repository structure provided.
             Be conservative and practical - suggest minimal changes needed to address the issue.
-          prompt: |
-            Issue Title: ${{ steps.issue-details.outputs.title }}
+            
+            user: Issue Title: ${{ steps.issue-details.outputs.title }}
             Issue Description: ${{ steps.issue-details.outputs.body }}
             
             Repository Files:
@@ -138,14 +138,14 @@ jobs:
       
       - name: Generate Code Changes with MCP
         id: generate-code
-        uses: actions/ai-inference@v1
+        uses: actions/ai-inference@v1.2
         with:
           model: openai/gpt-4o
           max-tokens: 4000
           enable-github-mcp: true
-          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
-          system-prompt: |
-            You are an expert software engineer with MCP file system access for direct file operations.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          input: |
+            system: You are an expert software engineer with MCP file system access for direct file operations.
             
             You MUST use MCP tools to:
             1. Read existing files to understand the current codebase structure
@@ -164,8 +164,8 @@ jobs:
             IMPORTANT: You must actually perform the file operations using MCP tools. Do not just describe what should be done - DO the file operations.
             
             After completing all file operations, provide a brief summary of the changes made.
-          prompt: |
-            Issue Title: ${{ steps.issue-details.outputs.title }}
+            
+            user: Issue Title: ${{ steps.issue-details.outputs.title }}
             Issue Description: ${{ steps.issue-details.outputs.body }}
             
             Implementation Plan: ${{ steps.parse-plan.outputs.implementation_summary }}

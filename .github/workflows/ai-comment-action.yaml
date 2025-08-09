@@ -72,25 +72,9 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Setup MCP for File Operations
+      - name: Setup Environment
         run: |
-          # Install Node.js MCP packages for file operations
-          npm install -g @modelcontextprotocol/server-filesystem
-          
-          # Setup MCP server configuration
-          cat > mcp-config.json << 'EOF'
-          {
-            "mcpServers": {
-              "filesystem": {
-                "command": "npx",
-                "args": ["@modelcontextprotocol/server-filesystem", "/tmp"],
-                "env": {
-                  "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
-                }
-              }
-            }
-          }
-          EOF
+          echo "Setting up environment for AI code generation"
       
       - name: Setup Git Configuration
         run: |
@@ -120,11 +104,13 @@ jobs:
       
       - name: Analyze Update Request
         id: analyze-update
-        uses: actions/ai-inference@v1
+        uses: actions/ai-inference@v1.2
         with:
           model: openai/gpt-4o-mini
-          system-prompt: |
-            You are an expert software engineer tasked with understanding and implementing code change requests.
+          enable-github-mcp: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          input: |
+            system: You are an expert software engineer tasked with understanding and implementing code change requests.
             Based on the user's instruction and the current PR state, determine what changes need to be made.
             
             Respond in JSON format with the following structure:
@@ -137,8 +123,8 @@ jobs:
               "feasible": true/false,
               "reason_if_not_feasible": "Explanation if changes cannot be made"
             }
-          prompt: |
-            User Instruction: ${{ steps.pr-details.outputs.instruction }}
+            
+            user: User Instruction: ${{ steps.pr-details.outputs.instruction }}
             Comment Author: @${{ steps.pr-details.outputs.comment_author }}
             
             Current PR Title: ${{ steps.pr-details.outputs.pr_title }}
@@ -189,12 +175,14 @@ jobs:
       
       - name: Generate Updated Code
         id: generate-updates
-        uses: actions/ai-inference@v1
+        uses: actions/ai-inference@v1.2
         with:
           model: openai/gpt-4o
           max-tokens: 4000
-          system-prompt: |
-            You are an expert software engineer with access to file system operations through MCP.
+          enable-github-mcp: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          input: |
+            system: You are an expert software engineer with access to file system operations through MCP.
             Generate updated code based on the change request and handle file operations properly.
             Follow these guidelines:
             1. Maintain consistency with existing code style
@@ -206,8 +194,8 @@ jobs:
             7. Use git operations for file removal (files will be properly removed using git rm)
             8. Only output code, no explanations
             9. When removing files, ensure they are tracked in git before removal
-          prompt: |
-            Update Request: ${{ steps.pr-details.outputs.instruction }}
+            
+            user: Update Request: ${{ steps.pr-details.outputs.instruction }}
             
             Changes to implement: ${{ steps.parse-update-plan.outputs.change_summary }}
             Files to modify: ${{ steps.parse-update-plan.outputs.files_to_modify }}
