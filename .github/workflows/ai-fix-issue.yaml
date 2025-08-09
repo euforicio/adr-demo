@@ -9,7 +9,6 @@ permissions:
   issues: write        # For commenting on issues
   pull-requests: write # For creating pull requests
   models: read         # For GitHub Models access
-  repository-projects: read # For GitHub MCP server
 
 jobs:
   generate-pr:
@@ -21,10 +20,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Setup Environment
-        run: |
-          echo "Setting up environment for AI code generation"
       
       - name: Setup Git Configuration
         run: |
@@ -68,29 +63,42 @@ jobs:
           echo "has_cargo=$([[ -f Cargo.toml ]] && echo true || echo false)" >> $GITHUB_OUTPUT
           echo "has_go_mod=$([[ -f go.mod ]] && echo true || echo false)" >> $GITHUB_OUTPUT
       
-      - name: Create temp files for analysis
-        run: |
-          echo '${{ steps.issue-details.outputs.title }}' > /tmp/issue_title.txt
-          echo '${{ steps.issue-details.outputs.body }}' > /tmp/issue_body.txt  
-          echo '${{ steps.repo-structure.outputs.files }}' > /tmp/repo_files.txt
-      
       - name: Analyze Issue and Generate Implementation Plan
         id: analyze-issue
-        uses: actions/ai-inference@v1.2.8
+        uses: actions/ai-inference@v1
         with:
-          prompt-file: './.github/prompts/analyze-issue.prompt.yml'
-          enable-github-mcp: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          input: |
-            has_package_json: ${{ steps.repo-structure.outputs.has_package_json }}
-            has_requirements: ${{ steps.repo-structure.outputs.has_requirements }}
-            has_gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
-            has_cargo: ${{ steps.repo-structure.outputs.has_cargo }}
-            has_go_mod: ${{ steps.repo-structure.outputs.has_go_mod }}
-          file_input: |
-            issue_title: /tmp/issue_title.txt
-            issue_body: /tmp/issue_body.txt
-            repo_files: /tmp/repo_files.txt
+          model: openai/gpt-4o-mini
+          system-prompt: |
+            You are an expert software engineer tasked with analyzing issues and determining the implementation approach.
+            Based on the issue description and repository structure, you need to:
+            1. Identify what type of change is needed (bug fix, feature, documentation, etc.)
+            2. Determine which files need to be modified or created
+            3. Provide a clear implementation plan
+            
+            Respond in JSON format with the following structure:
+            {
+              "change_type": "feature|bugfix|docs|refactor|test",
+              "files_to_modify": ["path/to/file1", "path/to/file2"],
+              "files_to_create": ["path/to/newfile"],
+              "implementation_summary": "Brief description of what needs to be done",
+              "complexity": "simple|medium|complex"
+            }
+            
+            Only suggest changes to existing files if they are in the repository structure provided.
+            Be conservative and practical - suggest minimal changes needed to address the issue.
+          prompt: |
+            Issue Title: ${{ steps.issue-details.outputs.title }}
+            Issue Description: ${{ steps.issue-details.outputs.body }}
+            
+            Repository Files:
+            ${{ steps.repo-structure.outputs.files }}
+            
+            Project Type Indicators:
+            - Has package.json: ${{ steps.repo-structure.outputs.has_package_json }}
+            - Has requirements.txt: ${{ steps.repo-structure.outputs.has_requirements }}
+            - Has Gemfile: ${{ steps.repo-structure.outputs.has_gemfile }}
+            - Has Cargo.toml: ${{ steps.repo-structure.outputs.has_cargo }}
+            - Has go.mod: ${{ steps.repo-structure.outputs.has_go_mod }}
       
       - name: Parse Implementation Plan
         id: parse-plan
@@ -124,32 +132,39 @@ jobs:
             core.setOutput('implementation_summary', plan.implementation_summary);
             core.setOutput('complexity', plan.complexity);
       
-      - name: Create temp files for code generation
-        run: |
-          echo '${{ steps.issue-details.outputs.title }}' > /tmp/issue_title2.txt
-          echo '${{ steps.issue-details.outputs.body }}' > /tmp/issue_body2.txt
-          echo '${{ steps.parse-plan.outputs.implementation_summary }}' > /tmp/implementation_summary.txt
-          echo '${{ steps.parse-plan.outputs.files_to_modify }}' > /tmp/files_to_modify.txt
-          echo '${{ steps.parse-plan.outputs.files_to_create }}' > /tmp/files_to_create.txt
-      
-      - name: Generate Code Changes with MCP
+      - name: Generate Code Changes
         id: generate-code
-        uses: actions/ai-inference@v1.2.8
+        uses: actions/ai-inference@v1
         with:
-          prompt-file: './.github/prompts/generate-code.prompt.yml'
+          model: openai/gpt-4o
           max-tokens: 4000
-          enable-github-mcp: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          file_input: |
-            issue_title: /tmp/issue_title2.txt
-            issue_body: /tmp/issue_body2.txt
-            implementation_summary: /tmp/implementation_summary.txt
-            files_to_modify: /tmp/files_to_modify.txt
-            files_to_create: /tmp/files_to_create.txt
+          system-prompt: |
+            You are an expert software engineer. Generate high-quality, production-ready code based on the requirements.
+            Follow these guidelines:
+            1. Write clean, well-commented code
+            2. Follow best practices for the language/framework
+            3. Include error handling where appropriate
+            4. Make code that is maintainable and testable
+            5. If creating multiple files, separate them with "--- FILE: path/to/file ---"
+            6. Only output the code content, no explanations
+            
+            For modifications to existing files, show the complete updated file content.
+          prompt: |
+            Issue Title: ${{ steps.issue-details.outputs.title }}
+            Issue Description: ${{ steps.issue-details.outputs.body }}
+            
+            Implementation Plan: ${{ steps.parse-plan.outputs.implementation_summary }}
+            Files to modify: ${{ steps.parse-plan.outputs.files_to_modify }}
+            Files to create: ${{ steps.parse-plan.outputs.files_to_create }}
+            
+            Generate the necessary code changes to implement this issue.
       
-      - name: Create Branch and Commit Changes
+      - name: Create Branch and Apply Changes
         id: create-branch
         env:
+          CODE_CHANGES: ${{ steps.generate-code.outputs.response }}
+          FILES_TO_CREATE: ${{ steps.parse-plan.outputs.files_to_create }}
+          FILES_TO_MODIFY: ${{ steps.parse-plan.outputs.files_to_modify }}
           ISSUE_NUMBER: ${{ steps.issue-details.outputs.number }}
         run: |
           # Create a new branch
@@ -157,27 +172,61 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           
-          # Check if any files were changed by MCP
-          if git diff --quiet && git diff --cached --quiet; then
-            echo "No changes detected from MCP operations"
-            echo "This might indicate that MCP file operations failed or the AI didn't make actual file changes."
-            # Create a fallback note
-            echo "# AI Implementation Failed for Issue #${ISSUE_NUMBER}" > AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
-            echo "" >> AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
-            echo "MCP file operations did not produce any changes." >> AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
-            echo "The AI may need to be instructed more specifically to use MCP file operations." >> AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
-            git add AI_IMPLEMENTATION_FAILED_${ISSUE_NUMBER}.md
-          else
-            echo "Changes detected! Files modified by MCP operations:"
-            git status --porcelain
-          fi
+          # Process the generated code
+          cat > process_changes.py << 'PYTHON_SCRIPT'
+          import os
+          import json
+          import re
           
-          # Add and commit all changes
+          code_changes = os.environ.get('CODE_CHANGES', '')
+          files_to_create = json.loads(os.environ.get('FILES_TO_CREATE', '[]'))
+          files_to_modify = json.loads(os.environ.get('FILES_TO_MODIFY', '[]'))
+          
+          # Split code by file markers
+          file_pattern = r'--- FILE: (.*?) ---'
+          parts = re.split(file_pattern, code_changes)
+          
+          # Process files
+          if len(parts) > 1:
+              # Multiple files specified in the output
+              for i in range(1, len(parts), 2):
+                  if i < len(parts) - 1:
+                      filepath = parts[i].strip()
+                      content = parts[i + 1].strip()
+                      
+                      # Create directory if needed
+                      os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+                      
+                      # Write file
+                      with open(filepath, 'w') as f:
+                          f.write(content)
+                      print(f"Created/Modified: {filepath}")
+          else:
+              # Single file or fallback
+              if files_to_create:
+                  filepath = files_to_create[0]
+              elif files_to_modify:
+                  filepath = files_to_modify[0]
+              else:
+                  filepath = "AI_IMPLEMENTATION.md"
+              
+              # Create directory if needed
+              os.makedirs(os.path.dirname(filepath), exist_ok=True) if os.path.dirname(filepath) else None
+              
+              # Write the content
+              with open(filepath, 'w') as f:
+                  f.write(code_changes)
+              print(f"Created/Modified: {filepath}")
+          PYTHON_SCRIPT
+          
+          python3 process_changes.py
+          
+          # Add and commit changes
           git add -A
           git commit -m "AI Generated: Implementation for issue #${ISSUE_NUMBER}
-
-          Generated using GitHub Models AI with MCP file operations.
-          This implementation should be reviewed before merging."
+          
+          Generated by GitHub Models AI based on the issue description.
+          This is an automated implementation that should be reviewed before merging."
           
           # Push the branch
           git push origin "$BRANCH_NAME"
