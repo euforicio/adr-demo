@@ -21,25 +21,9 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Setup MCP for File Operations
+      - name: Setup Environment
         run: |
-          # Install Node.js MCP packages for file operations
-          npm install -g @modelcontextprotocol/server-filesystem
-          
-          # Setup MCP server configuration
-          cat > mcp-config.json << 'EOF'
-          {
-            "mcpServers": {
-              "filesystem": {
-                "command": "npx",
-                "args": ["@modelcontextprotocol/server-filesystem", "."],
-                "env": {
-                  "FILESYSTEM_ALLOWED_DIRECTORIES": "$PWD"
-                }
-              }
-            }
-          }
-          EOF
+          echo "Setting up environment for AI code generation"
       
       - name: Setup Git Configuration
         run: |
@@ -155,12 +139,11 @@ jobs:
       - name: Generate Code Changes with MCP
         id: generate-code
         uses: actions/ai-inference@v1
-        env:
-          MCP_CONFIG: ./mcp-config.json
         with:
           model: openai/gpt-4o
           max-tokens: 4000
-          mcp-config: ./mcp-config.json
+          enable-github-mcp: true
+          github-mcp-token: ${{ secrets.GITHUB_TOKEN }}
           system-prompt: |
             You are an expert software engineer with MCP file system access for direct file operations.
             
