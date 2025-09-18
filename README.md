@@ -493,3 +493,7 @@ go test ./...
 ---
 
 *This repository serves as both documentation and demonstration of effective ADR practices. Use it as a template for your own projects and adapt the process to fit your team's needs.*
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
