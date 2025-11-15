@@ -110,6 +110,10 @@ func (g *Generator) Build() error {
 		return fmt.Errorf("failed to generate search page: %w", err)
 	}
 
+	if err := g.generateDocsPage(); err != nil {
+		return fmt.Errorf("failed to generate documentation page: %w", err)
+	}
+
 	if g.config.Verbose {
 		fmt.Println("📦 Copying static assets...")
 	}

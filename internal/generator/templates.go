@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/euforicio/adr-demo/internal/config"
+	"github.com/euforicio/adr-demo/internal/markdown"
 )
 
 // loadTemplates loads and parses all HTML templates
@@ -158,9 +159,63 @@ func (g *Generator) generateSearchPage() error {
 	return nil
 }
 
+// generateDocsPage creates the documentation page from README.md
+func (g *Generator) generateDocsPage() error {
+	readmePath := "README.md"
+	content, err := os.ReadFile(readmePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if g.config.Verbose {
+				fmt.Println("ℹ️  README.md not found, skipping docs page generation")
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to read documentation source %s: %w", readmePath, err)
+	}
+
+	processor := markdown.NewSimple(&markdown.Config{
+		EnableGFM:     true,
+		EnableMermaid: true,
+		Verbose:       g.config.Verbose,
+		BaseURL:       g.config.BaseURL,
+	})
+
+	htmlContent, err := processor.Process(string(content))
+	if err != nil {
+		return fmt.Errorf("failed to process documentation markdown: %w", err)
+	}
+
+	data := struct {
+		Title          string
+		Content        template.HTML
+		ADRs           []*ADR
+		BaseURL        string
+		BreadcrumbType string
+	}{
+		Title:          "Documentation",
+		Content:        template.HTML(htmlContent),
+		ADRs:           g.adrs,
+		BaseURL:        g.config.BaseURL,
+		BreadcrumbType: "docs",
+	}
+
+	if err := g.renderPage("docs.html", "docs.html", data); err != nil {
+		return err
+	}
+	if err := g.renderPage("docs.html", filepath.Join("docs", "index.html"), data); err != nil {
+		return err
+	}
+
+	g.stats.PageCount++
+	return nil
+}
+
 // renderPage renders a template to a file
 func (g *Generator) renderPage(templateName, filename string, data interface{}) error {
 	outputPath := filepath.Join(g.config.OutputDirectory, filename)
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("failed to create directory for %s: %w", outputPath, err)
+	}
 
 	file, err := os.Create(outputPath)
 	if err != nil {

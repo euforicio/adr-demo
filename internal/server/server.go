@@ -72,6 +72,7 @@ func (s *Server) setupRoutes() {
 	http.HandleFunc("/search.html", s.handleSearch)
 	http.HandleFunc("/search-index.json", s.handleSearchIndex)
 	http.HandleFunc("/docs", s.handleDocs)
+	http.HandleFunc("/docs/", s.handleDocs)
 
 	// Serve static assets if they exist
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
