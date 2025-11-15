@@ -7,7 +7,7 @@ on:
       - 'docs/**/*.html'
       - 'docs/**/*.css' 
       - 'docs/**/*.js'
-      - 'docs/adr/**/*.md'
+      - 'adr/**/*.md'
       - 'docs/adr-index.json'
       - 'docs/_config.yml'
   workflow_dispatch: # Allow manual trigger
@@ -64,8 +64,8 @@ jobs:
           fi
           
           # Check ADR files exist
-          adr_count=$(find docs/adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l)
-          echo "📄 Found $adr_count ADR files"
+          adr_count=$(find adr -name "[0-9][0-9][0-9][0-9]-*.md" | wc -l)
+          echo "📄 Found $adr_count ADR source files"
           
           if [ "$adr_count" -eq 0 ]; then
             echo "❌ No ADR files found"

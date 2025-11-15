@@ -67,6 +67,12 @@ jobs:
         run: |
           echo "🏗️ Generating static site..."
           ./adr-gen build --output docs --base-url "/adr-demo" --minify
+
+      - name: Generate ADR index JSON
+        run: |
+          echo "🧾 Generating docs/adr-index.json..."
+          chmod +x scripts/generate-adr-index.sh
+          ./scripts/generate-adr-index.sh
           
       - name: Validate generated site
         run: |
@@ -79,6 +85,7 @@ jobs:
             "docs/search-index.json"
             "docs/static/css/main.css"
             "docs/static/js/main.js"
+            "docs/adr-index.json"
           )
           
           for file in "${required_files[@]}"; do
@@ -105,6 +112,12 @@ jobs:
               exit 1
             fi
             echo "✅ Search index JSON is valid"
+
+            if ! jq . docs/adr-index.json >/dev/null; then
+              echo "❌ Invalid JSON in adr-index.json"
+              exit 1
+            fi
+            echo "✅ ADR index JSON is valid"
           fi
           
           # Check that documentation template exists in source

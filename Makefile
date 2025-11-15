@@ -58,7 +58,7 @@ test: validate lint ## Run all tests and validation
 
 clean: ## Clean generated files
 	@echo "🧹 Cleaning generated files..."
-	@rm -f adr-index.json
+	@rm -f adr-index.json docs/adr-index.json
 	@echo "✅ Cleaned generated files"
 
 install-deps: ## Install development dependencies
